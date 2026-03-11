@@ -2,7 +2,7 @@ import type { Fund } from "@/data/funds"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { IconBookmark } from "@tabler/icons-react"
+import { IconBookmark, IconBookmarkFilled } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
 
 const riskColors: Record<string, string> = {
@@ -15,9 +15,13 @@ const riskColors: Record<string, string> = {
 export function FundCard({
   fund,
   onSelect,
+  saved = false,
+  onToggleSave,
 }: {
   fund: Fund
   onSelect: (fund: Fund) => void
+  saved?: boolean
+  onToggleSave?: (fundId: string) => void
 }) {
   return (
     <Card
@@ -31,11 +35,23 @@ export function FundCard({
             <p className="mt-0.5 text-xs text-muted-foreground">{fund.amc}</p>
           </div>
           <button
-            className="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
-            onClick={(e) => e.stopPropagation()}
-            aria-label="Bookmark fund"
+            className={cn(
+              "shrink-0 transition-colors",
+              saved
+                ? "text-primary hover:text-primary/80"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+            onClick={(e) => {
+              e.stopPropagation()
+              onToggleSave?.(fund.id)
+            }}
+            aria-label={saved ? "Remove from saved" : "Save fund"}
           >
-            <IconBookmark className="size-4" />
+            {saved ? (
+              <IconBookmarkFilled className="size-4" />
+            ) : (
+              <IconBookmark className="size-4" />
+            )}
           </button>
         </div>
 

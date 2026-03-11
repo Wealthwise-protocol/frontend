@@ -1,23 +1,40 @@
-import { useState, useMemo } from "react"
+import { useState, useMemo, useCallback } from "react"
 import { funds, type Fund } from "@/data/funds"
 import { FundCard } from "@/components/explore/fund-card"
 import { FundDetail } from "@/components/explore/fund-detail"
 import { Input } from "@/components/ui/input"
-import { IconSearch } from "@tabler/icons-react"
+import { IconSearch, IconBookmark } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/animated"
 
-const categories = ["All Funds", "Equity", "Debt", "ELSS", "Hybrid", "Index"]
+const categories = ["All Funds", "Equity", "Debt", "ELSS", "Hybrid", "Index", "Saved"]
 
 export function ExplorePage() {
   const [search, setSearch] = useState("")
   const [activeCategory, setActiveCategory] = useState("All Funds")
   const [selectedFund, setSelectedFund] = useState<Fund | null>(null)
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
+
+  const toggleSave = useCallback((fundId: string) => {
+    setSavedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(fundId)) {
+        next.delete(fundId)
+      } else {
+        next.add(fundId)
+      }
+      return next
+    })
+  }, [])
 
   const filtered = useMemo(() => {
     return funds.filter((f) => {
       const matchesCategory =
-        activeCategory === "All Funds" || f.category === activeCategory
+        activeCategory === "All Funds"
+          ? true
+          : activeCategory === "Saved"
+            ? savedIds.has(f.id)
+            : f.category === activeCategory
       const matchesSearch =
         !search ||
         f.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -25,7 +42,7 @@ export function ExplorePage() {
         f.subcategory.toLowerCase().includes(search.toLowerCase())
       return matchesCategory && matchesSearch
     })
-  }, [search, activeCategory])
+  }, [search, activeCategory, savedIds])
 
   return (
     <>
@@ -54,10 +71,22 @@ export function ExplorePage() {
               "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
               activeCategory === cat
                 ? "border-primary bg-primary text-primary-foreground"
-                : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground",
+              cat === "Saved" && "inline-flex items-center gap-1"
             )}
           >
+            {cat === "Saved" && <IconBookmark className="size-3" />}
             {cat}
+            {cat === "Saved" && savedIds.size > 0 && (
+              <span className={cn(
+                "ml-0.5 inline-flex size-4 items-center justify-center rounded-full text-[0.55rem] font-bold",
+                activeCategory === "Saved"
+                  ? "bg-primary-foreground text-primary"
+                  : "bg-muted-foreground/20 text-muted-foreground"
+              )}>
+                {savedIds.size}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -74,6 +103,8 @@ export function ExplorePage() {
             <FundCard
               fund={fund}
               onSelect={setSelectedFund}
+              saved={savedIds.has(fund.id)}
+              onToggleSave={toggleSave}
             />
           </StaggerItem>
         ))}
@@ -82,7 +113,9 @@ export function ExplorePage() {
       {filtered.length === 0 && (
         <div className="mt-12 text-center">
           <p className="text-sm text-muted-foreground">
-            No funds found matching your criteria.
+            {activeCategory === "Saved"
+              ? "No saved funds yet. Bookmark funds to see them here."
+              : "No funds found matching your criteria."}
           </p>
         </div>
       )}

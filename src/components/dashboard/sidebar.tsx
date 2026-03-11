@@ -8,6 +8,7 @@ import {
   IconLayoutDashboard,
   IconSearch,
   IconSettingsAutomation,
+  IconReceipt,
   IconUser,
 } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
@@ -26,6 +27,7 @@ export const navItems = [
     icon: IconSettingsAutomation,
     href: "/dashboard/sip",
   },
+  { label: "Transactions", icon: IconReceipt, href: "/dashboard/transactions" },
   { label: "Profile", icon: IconUser, href: "/dashboard/profile" },
 ]
 
@@ -144,12 +146,12 @@ export function BottomNav() {
             key={item.href}
             to={item.href}
             className={cn(
-              "flex flex-col items-center gap-0.5 px-3 py-1.5 text-[0.6rem] font-medium transition-colors",
+              "flex items-center justify-center px-3 py-2 transition-colors",
               isActive ? "text-primary" : "text-muted-foreground"
             )}
+            aria-label={item.label}
           >
             <item.icon className="size-5" />
-            {item.label}
           </Link>
         )
       })}
