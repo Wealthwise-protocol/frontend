@@ -8,23 +8,9 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 import { cn } from "@/lib/utils"
+import { usePortfolioStore } from "@/stores/portfolio-store"
 
 const periods = ["1M", "3M", "6M", "1Y", "ALL"] as const
-
-const data1Y = [
-  { month: "Apr", value: 980000 },
-  { month: "May", value: 1020000 },
-  { month: "Jun", value: 1050000 },
-  { month: "Jul", value: 1080000 },
-  { month: "Aug", value: 1120000 },
-  { month: "Sep", value: 1160000 },
-  { month: "Oct", value: 1200000 },
-  { month: "Nov", value: 1280000 },
-  { month: "Dec", value: 1320000 },
-  { month: "Jan", value: 1400000 },
-  { month: "Feb", value: 1480000 },
-  { month: "Mar", value: 1582350 },
-]
 
 const chartConfig = {
   value: {
@@ -35,6 +21,7 @@ const chartConfig = {
 
 export function PortfolioChart() {
   const [activePeriod, setActivePeriod] = useState<string>("1Y")
+  const portfolioHistory = usePortfolioStore((s) => s.portfolioHistory)
 
   return (
     <Card className="flex-1">
@@ -60,7 +47,7 @@ export function PortfolioChart() {
         </div>
 
         <ChartContainer config={chartConfig} className="mt-6 h-64 w-full">
-          <BarChart data={data1Y} barCategoryGap="20%">
+          <BarChart data={portfolioHistory} barCategoryGap="20%">
             <CartesianGrid
               strokeDasharray="3 3"
               vertical={false}

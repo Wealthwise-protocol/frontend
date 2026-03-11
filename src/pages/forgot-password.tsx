@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
+import { toast } from "sonner"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -31,6 +32,7 @@ export function ForgotPasswordPage() {
     setTimeout(() => {
       setLoading(false)
       setSent(true)
+      toast.success("Reset link sent to your email")
     }, 800)
   }
 

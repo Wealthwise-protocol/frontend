@@ -6,12 +6,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
-
-const data = [
-  { name: "equity", label: "Equity", value: 55, fill: "var(--color-equity)" },
-  { name: "debt", label: "Debt", value: 30, fill: "var(--color-debt)" },
-  { name: "hybrid", label: "Hybrid", value: 15, fill: "var(--color-hybrid)" },
-]
+import { usePortfolioStore } from "@/stores/portfolio-store"
 
 const chartConfig = {
   equity: { label: "Equity", color: "var(--color-chart-3)" },
@@ -20,6 +15,8 @@ const chartConfig = {
 } satisfies ChartConfig
 
 export function AssetAllocation() {
+  const data = usePortfolioStore((s) => s.assetAllocation)
+
   return (
     <Card className="w-full xl:w-80">
       <CardContent className="p-5">

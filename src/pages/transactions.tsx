@@ -17,143 +17,8 @@ import {
   StaggerItem,
   CountUp,
 } from "@/components/ui/animated"
-
-type TransactionType = "SIP" | "Lumpsum" | "Redeem"
-type TransactionStatus = "Success" | "Processing" | "Failed"
-
-type Transaction = {
-  id: string
-  date: string
-  fundName: string
-  type: TransactionType
-  amount: number
-  units: number
-  nav: number
-  status: TransactionStatus
-}
-
-const transactions: Transaction[] = [
-  {
-    id: "t1",
-    date: "12 Oct 2023",
-    fundName: "Parag Parikh Flexi Cap Fund",
-    type: "SIP",
-    amount: 10000,
-    units: 146.156,
-    nav: 68.42,
-    status: "Success",
-  },
-  {
-    id: "t2",
-    date: "10 Oct 2023",
-    fundName: "HDFC Balanced Advantage Fund",
-    type: "SIP",
-    amount: 7500,
-    units: 18.278,
-    nav: 410.32,
-    status: "Success",
-  },
-  {
-    id: "t3",
-    date: "08 Oct 2023",
-    fundName: "ICICI Prudential Bluechip Fund",
-    type: "Lumpsum",
-    amount: 50000,
-    units: 543.478,
-    nav: 92.0,
-    status: "Success",
-  },
-  {
-    id: "t4",
-    date: "05 Oct 2023",
-    fundName: "Nippon India Small Cap Fund",
-    type: "SIP",
-    amount: 5000,
-    units: 35.072,
-    nav: 142.56,
-    status: "Success",
-  },
-  {
-    id: "t5",
-    date: "02 Oct 2023",
-    fundName: "Axis ELSS Tax Saver Fund",
-    type: "Lumpsum",
-    amount: 25000,
-    units: 312.891,
-    nav: 79.9,
-    status: "Processing",
-  },
-  {
-    id: "t6",
-    date: "28 Sep 2023",
-    fundName: "Parag Parikh Flexi Cap Fund",
-    type: "Redeem",
-    amount: 30000,
-    units: 450.0,
-    nav: 66.67,
-    status: "Success",
-  },
-  {
-    id: "t7",
-    date: "25 Sep 2023",
-    fundName: "SBI Liquid Fund",
-    type: "Lumpsum",
-    amount: 100000,
-    units: 29.24,
-    nav: 3420.15,
-    status: "Success",
-  },
-  {
-    id: "t8",
-    date: "20 Sep 2023",
-    fundName: "Mirae Asset Large Cap Fund",
-    type: "SIP",
-    amount: 5000,
-    units: 48.544,
-    nav: 102.99,
-    status: "Failed",
-  },
-  {
-    id: "t9",
-    date: "15 Sep 2023",
-    fundName: "UTI Nifty 50 Index Fund",
-    type: "Lumpsum",
-    amount: 15000,
-    units: 100.067,
-    nav: 149.9,
-    status: "Success",
-  },
-  {
-    id: "t10",
-    date: "12 Sep 2023",
-    fundName: "Parag Parikh Flexi Cap Fund",
-    type: "SIP",
-    amount: 10000,
-    units: 149.7,
-    nav: 66.8,
-    status: "Success",
-  },
-  {
-    id: "t11",
-    date: "10 Sep 2023",
-    fundName: "HDFC Balanced Advantage Fund",
-    type: "SIP",
-    amount: 7500,
-    units: 18.51,
-    nav: 405.18,
-    status: "Success",
-  },
-  {
-    id: "t12",
-    date: "05 Sep 2023",
-    fundName: "Nippon India Small Cap Fund",
-    type: "SIP",
-    amount: 5000,
-    units: 35.99,
-    nav: 138.92,
-    status: "Success",
-  },
-]
+import { useTransactionStore } from "@/stores/transaction-store"
+import type { Transaction, TransactionType, TransactionStatus } from "@/types"
 
 const typeFilters: ("All" | TransactionType)[] = ["All", "SIP", "Lumpsum", "Redeem"]
 
@@ -174,6 +39,7 @@ function formatCurrency(n: number) {
 }
 
 export function TransactionsPage() {
+  const transactions = useTransactionStore((s) => s.transactions)
   const [activeType, setActiveType] = useState<"All" | TransactionType>("All")
   const [sortAsc, setSortAsc] = useState(false)
 
@@ -186,7 +52,7 @@ export function TransactionsPage() {
       list = [...list].reverse()
     }
     return list
-  }, [activeType, sortAsc])
+  }, [transactions, activeType, sortAsc])
 
   const totalInvested = transactions
     .filter((t) => t.type !== "Redeem" && t.status === "Success")

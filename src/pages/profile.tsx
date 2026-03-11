@@ -8,6 +8,8 @@ import { Separator } from "@/components/ui/separator"
 import { IconShieldCheck } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/animated"
+import { useAuthStore } from "@/stores/auth-store"
+import { toast } from "sonner"
 
 function getPasswordStrength(password: string) {
   let score = 0
@@ -27,12 +29,22 @@ const strengthColors = [
 ]
 
 export function ProfilePage() {
-  const [firstName, setFirstName] = useState("Arjun")
-  const [lastName, setLastName] = useState("Kapoor")
-  const [phone, setPhone] = useState("+91 98765 43210")
+  const { user, updateProfile, updatePassword } = useAuthStore()
+
+  const [firstName, setFirstName] = useState(user?.firstName ?? "")
+  const [lastName, setLastName] = useState(user?.lastName ?? "")
+  const [phone, setPhone] = useState(user?.phone ?? "")
+  const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
 
   const strength = getPasswordStrength(newPassword)
+
+  if (!user) {
+    return <p className="text-muted-foreground">Not logged in</p>
+  }
+
+  const initials = `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`
 
   return (
     <>
@@ -48,25 +60,34 @@ export function ProfilePage() {
             <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-4">
                 <div className="flex size-14 shrink-0 items-center justify-center rounded-full bg-primary text-lg font-bold text-primary-foreground">
-                  AK
+                  {initials}
                 </div>
                 <div>
-                  <h2 className="text-sm font-semibold">Arjun Kapoor</h2>
+                  <h2 className="text-sm font-semibold">{user.firstName} {user.lastName}</h2>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    arjun.kapoor@example.com
+                    {user.email}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    +91 98765 43210
+                    {user.phone}
                   </p>
                 </div>
               </div>
-              <Badge
-                variant="outline"
-                className="w-fit gap-1 border-emerald-500/30 text-emerald-500"
-              >
-                <IconShieldCheck className="size-3" />
-                KYC Verified
-              </Badge>
+              {user.kycVerified ? (
+                <Badge
+                  variant="outline"
+                  className="w-fit gap-1 border-emerald-500/30 text-emerald-500"
+                >
+                  <IconShieldCheck className="size-3" />
+                  KYC Verified
+                </Badge>
+              ) : (
+                <Badge
+                  variant="outline"
+                  className="w-fit gap-1 border-yellow-500/30 text-yellow-500"
+                >
+                  KYC Pending
+                </Badge>
+              )}
             </CardContent>
           </Card></StaggerItem>
 
@@ -110,7 +131,14 @@ export function ProfilePage() {
                 />
               </div>
 
-              <Button className="mt-5" size="sm">
+              <Button
+                className="mt-5"
+                size="sm"
+                onClick={() => {
+                  updateProfile({ firstName, lastName, phone })
+                  toast.success("Profile updated")
+                }}
+              >
                 Save Changes
               </Button>
             </CardContent>
@@ -133,7 +161,8 @@ export function ProfilePage() {
                   <Input
                     id="currentPassword"
                     type="password"
-                    defaultValue="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
                   />
                 </div>
 
@@ -184,11 +213,26 @@ export function ProfilePage() {
                   <Label htmlFor="confirmPassword" className="text-xs">
                     Confirm New Password
                   </Label>
-                  <Input id="confirmPassword" type="password" />
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
                 </div>
               </div>
 
-              <Button className="mt-5" size="sm">
+              <Button
+                className="mt-5"
+                size="sm"
+                onClick={async () => {
+                  await updatePassword(currentPassword, newPassword)
+                  toast.success("Password updated")
+                  setCurrentPassword("")
+                  setNewPassword("")
+                  setConfirmPassword("")
+                }}
+              >
                 Update Password
               </Button>
             </CardContent>

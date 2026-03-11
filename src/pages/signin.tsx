@@ -1,5 +1,7 @@
 import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
+import { toast } from "sonner"
+import { useAuthStore } from "@/stores/auth-store"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -15,6 +17,7 @@ import { FadeIn } from "@/components/ui/animated"
 
 export function SignInPage() {
   const navigate = useNavigate()
+  const signIn = useAuthStore((s) => s.signIn)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -22,7 +25,7 @@ export function SignInPage() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError("")
 
@@ -36,10 +39,15 @@ export function SignInPage() {
     }
 
     setLoading(true)
-    setTimeout(() => {
-      setLoading(false)
+    try {
+      await signIn(email, password)
+      toast.success("Welcome back!")
       navigate("/dashboard")
-    }, 800)
+    } catch {
+      setError("Invalid email or password")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (

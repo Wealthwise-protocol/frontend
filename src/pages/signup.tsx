@@ -1,5 +1,7 @@
 import { useState, useMemo } from "react"
 import { Link } from "react-router-dom"
+import { toast } from "sonner"
+import { useAuthStore } from "@/stores/auth-store"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -151,6 +153,7 @@ function CountryCodePicker({
 
 // ── Sign Up Page ──
 export function SignUpPage() {
+  const signUp = useAuthStore((s) => s.signUp)
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
   const [email, setEmail] = useState("")
@@ -172,7 +175,7 @@ export function SignUpPage() {
     [password, confirmPassword]
   )
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError("")
 
@@ -214,10 +217,15 @@ export function SignUpPage() {
     }
 
     setLoading(true)
-    setTimeout(() => {
-      setLoading(false)
+    try {
+      await signUp({ firstName, lastName, email, phone, countryCode: country.dial, password })
+      toast.success("Account created successfully!")
       setSuccess(true)
-    }, 1000)
+    } catch {
+      setError("Something went wrong. Please try again.")
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (success) {

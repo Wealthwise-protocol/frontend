@@ -1,5 +1,8 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
+import { toast } from "sonner"
+import { useSipStore } from "@/stores/sip-store"
+import type { SIP } from "@/types"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -51,87 +54,6 @@ import {
   CountUp,
 } from "@/components/ui/animated"
 
-type Installment = {
-  date: string
-  amount: number
-  nav: number
-  units: number
-  status: "Success" | "Failed" | "Pending"
-}
-
-type SIP = {
-  id: string
-  fundName: string
-  monthlyAmt: number
-  startDate: string
-  nextDebit: string
-  totalInvested: number
-  currentValue: number
-  status: "ACTIVE" | "PAUSED"
-  installments: Installment[]
-}
-
-const initialSips: SIP[] = [
-  {
-    id: "1",
-    fundName: "Parag Parikh Flexi Cap Fund",
-    monthlyAmt: 10000,
-    startDate: "12 Jan 2022",
-    nextDebit: "12 Nov 2023",
-    totalInvested: 220000,
-    currentValue: 284500,
-    status: "ACTIVE",
-    installments: [
-      { date: "12 Oct 2023", amount: 10000, nav: 68.42, units: 146.156, status: "Success" },
-      { date: "12 Sep 2023", amount: 10000, nav: 66.8, units: 149.7, status: "Success" },
-      { date: "12 Aug 2023", amount: 10000, nav: 64.21, units: 155.738, status: "Success" },
-    ],
-  },
-  {
-    id: "2",
-    fundName: "Nippon India Small Cap Fund",
-    monthlyAmt: 5000,
-    startDate: "05 Mar 2021",
-    nextDebit: "05 Nov 2023",
-    totalInvested: 160000,
-    currentValue: 245200,
-    status: "ACTIVE",
-    installments: [
-      { date: "05 Oct 2023", amount: 5000, nav: 142.56, units: 35.072, status: "Success" },
-      { date: "05 Sep 2023", amount: 5000, nav: 138.92, units: 35.99, status: "Success" },
-      { date: "05 Aug 2023", amount: 5000, nav: 135.1, units: 37.009, status: "Success" },
-    ],
-  },
-  {
-    id: "3",
-    fundName: "HDFC Balanced Advantage Fund",
-    monthlyAmt: 7500,
-    startDate: "10 Jun 2023",
-    nextDebit: "10 Nov 2023",
-    totalInvested: 37500,
-    currentValue: 39100,
-    status: "ACTIVE",
-    installments: [
-      { date: "10 Oct 2023", amount: 7500, nav: 410.32, units: 18.278, status: "Success" },
-      { date: "10 Sep 2023", amount: 7500, nav: 405.18, units: 18.51, status: "Success" },
-    ],
-  },
-  {
-    id: "4",
-    fundName: "SBI Liquid Fund",
-    monthlyAmt: 15000,
-    startDate: "01 Jan 2023",
-    nextDebit: "--",
-    totalInvested: 105000,
-    currentValue: 108300,
-    status: "PAUSED",
-    installments: [
-      { date: "01 Jul 2023", amount: 15000, nav: 3420.15, units: 4.386, status: "Success" },
-      { date: "01 Jun 2023", amount: 15000, nav: 3410.82, units: 4.398, status: "Success" },
-      { date: "01 May 2023", amount: 15000, nav: 3398.5, units: 4.414, status: "Success" },
-    ],
-  },
-]
 
 function formatCurrency(n: number) {
   return `₹${n.toLocaleString("en-IN")}`
@@ -396,7 +318,7 @@ function SIPRow({
 }
 
 export function SipPage() {
-  const [sipList, setSipList] = useState<SIP[]>(initialSips)
+  const { sips: sipList, togglePause: storeTogglePause, editAmount: storeEditAmount, cancelSip: storeCancelSip } = useSipStore()
 
   // Pause/Resume dialog
   const [pauseTarget, setPauseTarget] = useState<SIP | null>(null)
@@ -424,17 +346,8 @@ export function SipPage() {
 
   function confirmTogglePause() {
     if (!pauseTarget) return
-    setSipList((prev) =>
-      prev.map((s) => {
-        if (s.id !== pauseTarget.id) return s
-        const newStatus = s.status === "ACTIVE" ? "PAUSED" : "ACTIVE"
-        return {
-          ...s,
-          status: newStatus as "ACTIVE" | "PAUSED",
-          nextDebit: newStatus === "PAUSED" ? "--" : s.startDate.replace(/\d+/, "12") || s.nextDebit,
-        }
-      })
-    )
+    storeTogglePause(pauseTarget.id)
+    toast.success(pauseTarget.status === "ACTIVE" ? "SIP paused" : "SIP resumed")
     setPauseTarget(null)
   }
 
@@ -448,11 +361,8 @@ export function SipPage() {
     if (!editTarget) return
     const newAmt = parseInt(editAmount, 10)
     if (isNaN(newAmt) || newAmt < 100) return
-    setSipList((prev) =>
-      prev.map((s) =>
-        s.id === editTarget.id ? { ...s, monthlyAmt: newAmt } : s
-      )
-    )
+    storeEditAmount(editTarget.id, newAmt)
+    toast.success("SIP amount updated")
     setEditSaved(true)
     setTimeout(() => {
       setEditTarget(null)
@@ -466,7 +376,8 @@ export function SipPage() {
 
   function confirmCancel() {
     if (!cancelTargetId) return
-    setSipList((prev) => prev.filter((s) => s.id !== cancelTargetId))
+    storeCancelSip(cancelTargetId)
+    toast.success("SIP cancelled")
     setCancelTargetId(null)
   }
 

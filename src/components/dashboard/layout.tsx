@@ -1,11 +1,24 @@
+import { useEffect } from "react"
 import { Outlet } from "react-router-dom"
 import { SidebarProvider, BottomNav, useSidebarState } from "@/components/dashboard/sidebar"
 import { ProfileDropdown } from "@/components/dashboard/profile-dropdown"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { cn } from "@/lib/utils"
+import { usePortfolioStore } from "@/stores/portfolio-store"
+import { useSipStore } from "@/stores/sip-store"
+import { useTransactionStore } from "@/stores/transaction-store"
 
 function LayoutShell() {
   const { collapsed } = useSidebarState()
+  const initPortfolio = usePortfolioStore((s) => s.init)
+  const initSips = useSipStore((s) => s.init)
+  const initTransactions = useTransactionStore((s) => s.init)
+
+  useEffect(() => {
+    initPortfolio()
+    initSips()
+    initTransactions()
+  }, [initPortfolio, initSips, initTransactions])
 
   return (
     <div

@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input"
 import { IconSearch, IconBookmark } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/animated"
+import { useExploreStore } from "@/stores/explore-store"
+import { toast } from "sonner"
 
 const categories = ["All Funds", "Equity", "Debt", "ELSS", "Hybrid", "Index", "Saved"]
 
@@ -13,19 +15,13 @@ export function ExplorePage() {
   const [search, setSearch] = useState("")
   const [activeCategory, setActiveCategory] = useState("All Funds")
   const [selectedFund, setSelectedFund] = useState<Fund | null>(null)
-  const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
+  const { savedFundIds, toggleSave } = useExploreStore()
 
-  const toggleSave = useCallback((fundId: string) => {
-    setSavedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(fundId)) {
-        next.delete(fundId)
-      } else {
-        next.add(fundId)
-      }
-      return next
-    })
-  }, [])
+  const handleToggleSave = useCallback((fundId: string) => {
+    const wasSaved = savedFundIds.includes(fundId)
+    toggleSave(fundId)
+    toast.success(wasSaved ? "Removed from saved" : "Added to saved")
+  }, [savedFundIds, toggleSave])
 
   const filtered = useMemo(() => {
     return funds.filter((f) => {
@@ -33,7 +29,7 @@ export function ExplorePage() {
         activeCategory === "All Funds"
           ? true
           : activeCategory === "Saved"
-            ? savedIds.has(f.id)
+            ? savedFundIds.includes(f.id)
             : f.category === activeCategory
       const matchesSearch =
         !search ||
@@ -42,7 +38,7 @@ export function ExplorePage() {
         f.subcategory.toLowerCase().includes(search.toLowerCase())
       return matchesCategory && matchesSearch
     })
-  }, [search, activeCategory, savedIds])
+  }, [search, activeCategory, savedFundIds])
 
   return (
     <>
@@ -77,14 +73,14 @@ export function ExplorePage() {
           >
             {cat === "Saved" && <IconBookmark className="size-3" />}
             {cat}
-            {cat === "Saved" && savedIds.size > 0 && (
+            {cat === "Saved" && savedFundIds.length > 0 && (
               <span className={cn(
                 "ml-0.5 inline-flex size-4 items-center justify-center rounded-full text-[0.55rem] font-bold",
                 activeCategory === "Saved"
                   ? "bg-primary-foreground text-primary"
                   : "bg-muted-foreground/20 text-muted-foreground"
               )}>
-                {savedIds.size}
+                {savedFundIds.length}
               </span>
             )}
           </button>
@@ -103,8 +99,8 @@ export function ExplorePage() {
             <FundCard
               fund={fund}
               onSelect={setSelectedFund}
-              saved={savedIds.has(fund.id)}
-              onToggleSave={toggleSave}
+              saved={savedFundIds.includes(fund.id)}
+              onToggleSave={handleToggleSave}
             />
           </StaggerItem>
         ))}
