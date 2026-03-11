@@ -19,10 +19,10 @@ export function Hero() {
 
         <div className="mt-8 flex items-center gap-3">
           <Button size="lg" asChild>
-            <Link to="/dashboard">Start Investing</Link>
+            <Link to="/signup">Start Investing</Link>
           </Button>
           <Button variant="outline" size="lg" asChild>
-            <Link to="/dashboard">Explore Funds</Link>
+            <Link to="/signin">Explore Funds</Link>
           </Button>
         </div>
       </div>

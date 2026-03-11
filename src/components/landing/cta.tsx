@@ -9,7 +9,7 @@ export function CTA() {
       </h2>
       <div className="mt-8">
         <Button size="lg" asChild>
-          <Link to="/dashboard">Create Free Account</Link>
+          <Link to="/signup">Create Free Account</Link>
         </Button>
       </div>
     </section>

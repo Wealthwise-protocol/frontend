@@ -35,8 +35,11 @@ export function Navbar() {
 
         <div className="flex items-center gap-2">
           <ThemeToggle />
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/signin">Sign In</Link>
+          </Button>
           <Button size="sm" asChild>
-            <Link to="/dashboard">Get Started</Link>
+            <Link to="/signup">Get Started</Link>
           </Button>
         </div>
       </div>
