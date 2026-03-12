@@ -1,14 +1,25 @@
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { IconShieldCheck } from "@tabler/icons-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { IconShieldCheck, IconAlertTriangle } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/animated"
 import { useAuthStore } from "@/stores/auth-store"
+import { authService } from "@/services/auth"
 import { toast } from "sonner"
 
 function getPasswordStrength(password: string) {
@@ -29,7 +40,8 @@ const strengthColors = [
 ]
 
 export function ProfilePage() {
-  const { user, updateProfile, updatePassword } = useAuthStore()
+  const navigate = useNavigate()
+  const { user, updateProfile, signOut } = useAuthStore()
 
   const [firstName, setFirstName] = useState(user?.firstName ?? "")
   const [lastName, setLastName] = useState(user?.lastName ?? "")
@@ -37,6 +49,9 @@ export function ProfilePage() {
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+  const [deleteConfirmation, setDeleteConfirmation] = useState("")
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   const strength = getPasswordStrength(newPassword)
 
@@ -134,9 +149,15 @@ export function ProfilePage() {
               <Button
                 className="mt-5"
                 size="sm"
-                onClick={() => {
-                  updateProfile({ firstName, lastName, phone })
-                  toast.success("Profile updated")
+                onClick={async () => {
+                  try {
+                    const updated = await authService.updateProfile({ firstName, lastName, phone })
+                    updateProfile(updated)
+                    toast.success("Profile updated")
+                  } catch (err: unknown) {
+                    const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+                    toast.error(msg || "Failed to update profile")
+                  }
                 }}
               >
                 Save Changes
@@ -226,11 +247,16 @@ export function ProfilePage() {
                 className="mt-5"
                 size="sm"
                 onClick={async () => {
-                  await updatePassword(currentPassword, newPassword)
-                  toast.success("Password updated")
-                  setCurrentPassword("")
-                  setNewPassword("")
-                  setConfirmPassword("")
+                  try {
+                    await authService.changePassword({ currentPassword, newPassword })
+                    toast.success("Password updated")
+                    setCurrentPassword("")
+                    setNewPassword("")
+                    setConfirmPassword("")
+                  } catch (err: unknown) {
+                    const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+                    toast.error(msg || "Failed to update password")
+                  }
                 }}
               >
                 Update Password
@@ -247,13 +273,84 @@ export function ProfilePage() {
               <Separator className="mt-3 mb-5" />
 
               <p className="text-xs leading-relaxed text-muted-foreground">
-                Once you delete your account, there is no going back. Please be
-                certain.
+                Once you delete your account, there is no going back. All your
+                data including holdings, SIPs, and transaction history will be
+                permanently removed.
               </p>
 
-              <Button variant="destructive" size="sm" className="mt-4">
-                Delete Account
-              </Button>
+              <Dialog open={deleteDialogOpen} onOpenChange={(open) => {
+                setDeleteDialogOpen(open)
+                if (!open) setDeleteConfirmation("")
+              }}>
+                <DialogTrigger asChild>
+                  <Button variant="destructive" size="sm" className="mt-4">
+                    Delete Account
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-destructive">
+                      <IconAlertTriangle className="size-5" />
+                      Delete your account
+                    </DialogTitle>
+                    <DialogDescription className="pt-2 text-sm leading-relaxed">
+                      This action is <span className="font-semibold text-foreground">irreversible</span>.
+                      This will permanently delete your account, all your holdings,
+                      SIPs, transactions, and remove all associated data.
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <div className="space-y-3 pt-2">
+                    <div className="rounded-md border border-destructive/20 bg-destructive/5 p-3">
+                      <p className="text-xs text-muted-foreground">
+                        To confirm, type{" "}
+                        <span className="font-mono font-semibold text-foreground">
+                          delete my account
+                        </span>{" "}
+                        below:
+                      </p>
+                    </div>
+                    <Input
+                      value={deleteConfirmation}
+                      onChange={(e) => setDeleteConfirmation(e.target.value)}
+                      placeholder="delete my account"
+                      className="font-mono text-sm"
+                      autoComplete="off"
+                    />
+                  </div>
+
+                  <DialogFooter className="gap-2 sm:gap-0">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setDeleteDialogOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      disabled={deleteConfirmation !== "delete my account" || deleting}
+                      onClick={async () => {
+                        setDeleting(true)
+                        try {
+                          await authService.deleteAccount()
+                          signOut()
+                          navigate("/")
+                          toast.success("Your account has been deleted")
+                        } catch (err: unknown) {
+                          const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+                          toast.error(msg || "Failed to delete account")
+                        } finally {
+                          setDeleting(false)
+                        }
+                      }}
+                    >
+                      {deleting ? "Deleting..." : "I understand, delete my account"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </CardContent>
           </Card></StaggerItem>
         </StaggerContainer>

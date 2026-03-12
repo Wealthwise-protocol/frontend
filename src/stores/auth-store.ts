@@ -1,54 +1,29 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
-import type { User, SignUpPayload } from "@/types"
-import { mockUser } from "@/data/mock"
+import Cookies from "js-cookie"
+import type { User } from "@/types"
+
+export const TOKEN_COOKIE = "ww-token"
 
 type AuthState = {
   user: User | null
+  token: string | null
   isAuthenticated: boolean
-  signIn: (email: string, password: string) => Promise<void>
-  signUp: (data: SignUpPayload) => Promise<void>
-  signOut: () => void
+  setAuth: (user: User, token: string) => void
   updateProfile: (data: Partial<User>) => void
-  updatePassword: (current: string, newPw: string) => Promise<void>
+  signOut: () => void
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
+      token: null,
       isAuthenticated: false,
 
-      signIn: async (email, _password) => {
-        // MOCK: simulate API call
-        await new Promise((r) => setTimeout(r, 800))
-        // REAL: const res = await api.post('/auth/signin', { email, password })
-        set({
-          user: { ...mockUser, email },
-          isAuthenticated: true,
-        })
-      },
-
-      signUp: async (data) => {
-        // MOCK: simulate API call
-        await new Promise((r) => setTimeout(r, 1000))
-        // REAL: const res = await api.post('/auth/signup', data)
-        set({
-          user: {
-            id: `usr-${Date.now()}`,
-            firstName: data.firstName,
-            lastName: data.lastName,
-            email: data.email,
-            phone: data.phone,
-            countryCode: data.countryCode,
-            kycVerified: false,
-          },
-          isAuthenticated: true,
-        })
-      },
-
-      signOut: () => {
-        set({ user: null, isAuthenticated: false })
+      setAuth: (user, token) => {
+        Cookies.set(TOKEN_COOKIE, token, { expires: 7, sameSite: "lax" })
+        set({ user, token, isAuthenticated: true })
       },
 
       updateProfile: (data) => {
@@ -57,16 +32,16 @@ export const useAuthStore = create<AuthState>()(
         }))
       },
 
-      updatePassword: async (_current, _newPw) => {
-        // MOCK: simulate API call
-        await new Promise((r) => setTimeout(r, 800))
-        // REAL: await api.post('/auth/change-password', { current, newPw })
+      signOut: () => {
+        Cookies.remove(TOKEN_COOKIE)
+        set({ user: null, token: null, isAuthenticated: false })
       },
     }),
     {
       name: "ww-auth",
       partialize: (state) => ({
         user: state.user,
+        token: state.token,
         isAuthenticated: state.isAuthenticated,
       }),
     }

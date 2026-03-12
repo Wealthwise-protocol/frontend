@@ -1,8 +1,11 @@
 import { IconBuildingBank, IconShieldCheck, IconSparkles } from "@tabler/icons-react"
 import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
+import { useAuthStore } from "@/stores/auth-store"
 
 export function Hero() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+
   return (
     <section className="mx-auto max-w-6xl px-6 pt-24 pb-16 md:pt-32 md:pb-24">
       <div className="max-w-2xl">
@@ -18,12 +21,20 @@ export function Hero() {
         </p>
 
         <div className="mt-8 flex items-center gap-3">
-          <Button size="lg" asChild>
-            <Link to="/signup">Start Investing</Link>
-          </Button>
-          <Button variant="outline" size="lg" asChild>
-            <Link to="/signin">Explore Funds</Link>
-          </Button>
+          {isAuthenticated ? (
+            <Button size="lg" asChild>
+              <Link to="/dashboard">Go to Dashboard</Link>
+            </Button>
+          ) : (
+            <>
+              <Button size="lg" asChild>
+                <Link to="/signup">Start Investing</Link>
+              </Button>
+              <Button variant="outline" size="lg" asChild>
+                <Link to="/signin">Explore Funds</Link>
+              </Button>
+            </>
+          )}
         </div>
       </div>
 

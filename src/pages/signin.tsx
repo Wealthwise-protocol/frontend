@@ -1,7 +1,6 @@
 import { useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
-import { toast } from "sonner"
-import { useAuthStore } from "@/stores/auth-store"
+import { Link } from "react-router-dom"
+import { useSignIn } from "@/hooks/use-auth"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -16,14 +15,12 @@ import {
 import { FadeIn } from "@/components/ui/animated"
 
 export function SignInPage() {
-  const navigate = useNavigate()
-  const signIn = useAuthStore((s) => s.signIn)
+  const signInMutation = useSignIn()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [remember, setRemember] = useState(false)
   const [error, setError] = useState("")
-  const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -38,16 +35,15 @@ export function SignInPage() {
       return
     }
 
-    setLoading(true)
-    try {
-      await signIn(email, password)
-      toast.success("Welcome back!")
-      navigate("/dashboard")
-    } catch {
-      setError("Invalid email or password")
-    } finally {
-      setLoading(false)
-    }
+    signInMutation.mutate(
+      { email, password },
+      {
+        onError: (err: unknown) => {
+          const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+          setError(msg || "Invalid email or password")
+        },
+      }
+    )
   }
 
   return (
@@ -140,8 +136,8 @@ export function SignInPage() {
                   <p className="text-xs text-destructive">{error}</p>
                 )}
 
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Signing in..." : "Sign In"}
+                <Button type="submit" className="w-full" disabled={signInMutation.isPending}>
+                  {signInMutation.isPending ? "Signing in..." : "Sign In"}
                 </Button>
               </form>
             </CardContent>

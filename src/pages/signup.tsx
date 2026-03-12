@@ -1,7 +1,6 @@
-import { useState, useMemo } from "react"
-import { Link } from "react-router-dom"
-import { toast } from "sonner"
-import { useAuthStore } from "@/stores/auth-store"
+import { useState, useMemo, useEffect } from "react"
+import { Link, useNavigate } from "react-router-dom"
+import { useSignUp } from "@/hooks/use-auth"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -153,7 +152,8 @@ function CountryCodePicker({
 
 // ── Sign Up Page ──
 export function SignUpPage() {
-  const signUp = useAuthStore((s) => s.signUp)
+  const navigate = useNavigate()
+  const signUpMutation = useSignUp()
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
   const [email, setEmail] = useState("")
@@ -165,8 +165,6 @@ export function SignUpPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [agreeTerms, setAgreeTerms] = useState(false)
   const [error, setError] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState(false)
 
   const strength = getPasswordStrength(password)
 
@@ -216,19 +214,25 @@ export function SignUpPage() {
       return
     }
 
-    setLoading(true)
-    try {
-      await signUp({ firstName, lastName, email, phone, countryCode: country.dial, password })
-      toast.success("Account created successfully!")
-      setSuccess(true)
-    } catch {
-      setError("Something went wrong. Please try again.")
-    } finally {
-      setLoading(false)
-    }
+    signUpMutation.mutate(
+      { firstName, lastName, email, phone, countryCode: country.dial, password },
+      {
+        onError: (err: unknown) => {
+          const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+          setError(msg || "Something went wrong. Please try again.")
+        },
+      }
+    )
   }
 
-  if (success) {
+  useEffect(() => {
+    if (signUpMutation.isSuccess) {
+      const timer = setTimeout(() => navigate("/dashboard"), 2000)
+      return () => clearTimeout(timer)
+    }
+  }, [signUpMutation.isSuccess, navigate])
+
+  if (signUpMutation.isSuccess) {
     return (
       <div className="flex min-h-svh flex-col bg-background">
         <div className="flex items-center justify-between px-6 py-4">
@@ -248,11 +252,10 @@ export function SignUpPage() {
               Account Created
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              Welcome to WealthWise, {firstName}! Your account has been created
-              successfully.
+              Welcome to WealthWise, {firstName}! Redirecting you to your dashboard...
             </p>
-            <Button className="mt-8" asChild>
-              <Link to="/signin">Sign In to Your Account</Link>
+            <Button className="mt-8" onClick={() => navigate("/dashboard")}>
+              Go to Dashboard
             </Button>
           </FadeIn>
         </div>
@@ -509,8 +512,8 @@ export function SignUpPage() {
                   <p className="text-xs text-destructive">{error}</p>
                 )}
 
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Creating account..." : "Create Account"}
+                <Button type="submit" className="w-full" disabled={signUpMutation.isPending}>
+                  {signUpMutation.isPending ? "Creating account..." : "Create Account"}
                 </Button>
               </form>
             </CardContent>

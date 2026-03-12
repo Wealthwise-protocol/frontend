@@ -3,6 +3,7 @@ import { LandingPage } from "@/pages/landing"
 import { SignInPage } from "@/pages/signin"
 import { SignUpPage } from "@/pages/signup"
 import { ForgotPasswordPage } from "@/pages/forgot-password"
+import { ResetPasswordPage } from "@/pages/reset-password"
 import { NotFoundPage } from "@/pages/not-found"
 import { AuthGuard } from "@/components/auth-guard"
 import { DashboardLayout } from "@/components/dashboard/layout"
@@ -19,6 +20,7 @@ export function App() {
       <Route path="/signin" element={<SignInPage />} />
       <Route path="/signup" element={<SignUpPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route element={<AuthGuard />}>
         <Route path="/dashboard" element={<DashboardLayout />}>
           <Route index element={<DashboardPage />} />

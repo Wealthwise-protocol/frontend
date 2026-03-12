@@ -8,11 +8,12 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useNavigate } from "react-router-dom"
 import { useAuthStore } from "@/stores/auth-store"
-import { toast } from "sonner"
+import { useSignOut } from "@/hooks/use-auth"
 
 export function ProfileDropdown() {
   const navigate = useNavigate()
-  const { user, signOut } = useAuthStore()
+  const user = useAuthStore((s) => s.user)
+  const signOutMutation = useSignOut()
 
   const initials = user
     ? `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`
@@ -35,14 +36,11 @@ export function ProfileDropdown() {
           Profile
         </DropdownMenuItem>
         <DropdownMenuItem
-          onClick={() => {
-            signOut()
-            navigate("/signin")
-            toast.success("Signed out")
-          }}
+          disabled={signOutMutation.isPending}
+          onClick={() => signOutMutation.mutate()}
         >
           <IconLogout className="mr-2 size-3.5" />
-          Logout
+          {signOutMutation.isPending ? "Signing out..." : "Logout"}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
