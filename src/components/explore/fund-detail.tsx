@@ -143,15 +143,15 @@ export function FundDetail({
       <SheetContent
         side={isDesktop ? "right" : "bottom"}
         className={cn(
-          "overflow-y-auto",
-          isDesktop ? "w-full max-w-lg" : "h-[92vh] rounded-t-xl"
+          isDesktop ? "w-full max-w-lg overflow-y-auto" : "!h-[92vh] rounded-t-xl"
         )}
       >
-        <SheetHeader>
+        <SheetHeader className="shrink-0">
           <SheetTitle className="text-lg">{fund.name}</SheetTitle>
           <SheetDescription>{fund.amc}</SheetDescription>
         </SheetHeader>
 
+        <div className={cn(!isDesktop && "min-h-0 flex-1 overflow-y-auto")}>
         {step === "details" && (
           <div className="flex flex-col gap-6 px-6 pb-6">
             {/* Fund info badges */}
@@ -596,6 +596,7 @@ export function FundDetail({
             </div>
           </div>
         )}
+        </div>
       </SheetContent>
     </Sheet>
   )
