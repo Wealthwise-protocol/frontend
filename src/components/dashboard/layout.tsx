@@ -27,14 +27,14 @@ function LayoutShell() {
         collapsed ? "md:ml-14" : "md:ml-56"
       )}
     >
-      <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-end border-b border-border bg-background/80 px-4 backdrop-blur-md md:px-6">
+      <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-end border-b border-border/50 bg-background/80 px-4 shadow-[0_1px_12px_-4px_oklch(0.55_0.17_162/0.08)] backdrop-blur-md dark:shadow-[0_1px_12px_-4px_oklch(0.65_0.17_162/0.12)] md:px-6">
         <div className="flex items-center gap-1">
           <ThemeToggle />
           <ProfileDropdown />
         </div>
       </header>
 
-      <main className="flex-1 p-4 pb-20 md:p-6 md:pb-6">
+      <main className="flex-1 bg-grid-pattern p-4 pb-20 md:p-6 md:pb-6">
         <Outlet />
       </main>
 

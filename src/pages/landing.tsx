@@ -8,7 +8,7 @@ import { Footer } from "@/components/landing/footer"
 
 export function LandingPage() {
   return (
-    <div className="min-h-svh">
+    <div className="min-h-svh bg-grid-pattern">
       <Navbar />
       <main>
         <Hero />

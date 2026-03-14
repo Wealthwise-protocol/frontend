@@ -7,11 +7,13 @@ export function Hero() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
 
   return (
-    <section className="mx-auto max-w-6xl px-6 pt-24 pb-16 md:pt-32 md:pb-24">
-      <div className="max-w-2xl">
+    <section className="relative mx-auto max-w-6xl px-6 pt-24 pb-16 md:pt-32 md:pb-24">
+      {/* Ambient glow */}
+      <div className="pointer-events-none absolute -top-32 left-1/2 h-64 w-[600px] -translate-x-1/2 rounded-full bg-primary/10 blur-[100px]" />
+      <div className="relative max-w-2xl">
         <h1 className="text-4xl font-bold leading-tight tracking-tight md:text-5xl lg:text-6xl">
           Invest in mutual funds.{" "}
-          <span className="block">Precisely.</span>
+          <span className="block gradient-text">Precisely.</span>
         </h1>
 
         <p className="mt-6 max-w-lg text-sm leading-relaxed text-muted-foreground">
