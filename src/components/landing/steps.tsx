@@ -23,12 +23,12 @@ const steps = [
 
 export function Steps() {
   return (
-    <section className="mx-auto max-w-6xl px-6 py-16 md:py-24">
-      <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
+    <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 md:py-24">
+      <div className="grid gap-8 sm:grid-cols-2 sm:gap-10 lg:grid-cols-3">
         {steps.map((item) => (
           <div key={item.step} className="flex flex-col gap-4">
-            <div className="flex size-12 items-center justify-center rounded-lg border border-border bg-card">
-              <item.icon className="size-5 text-muted-foreground" />
+            <div className="flex size-10 items-center justify-center rounded-lg border border-border bg-card sm:size-12">
+              <item.icon className="size-4 text-muted-foreground sm:size-5" />
             </div>
             <div>
               <p className="text-[0.65rem] font-semibold tracking-wider text-primary">

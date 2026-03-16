@@ -21,44 +21,44 @@ const funds = [
 
 export function FundPreview() {
   return (
-    <section id="funds" className="mx-auto max-w-6xl px-6 py-16 md:py-24">
-      <div className="overflow-hidden rounded-xl border border-border bg-card">
-        <div className="border-b border-border px-5 py-3">
+    <section id="funds" className="mx-auto max-w-6xl px-4 py-12 sm:px-6 md:py-24">
+      <div className="overflow-hidden rounded-xl border border-border/50 bg-card dark:border-white/[0.08] dark:bg-white/[0.04]">
+        <div className="hidden border-b border-border/50 px-4 py-3 sm:block sm:px-5">
           <span className="inline-block rounded-md bg-muted px-2.5 py-1 text-[0.65rem] text-muted-foreground">
             app.wealthwise.in/explore
           </span>
         </div>
 
-        <div className="px-5 py-4">
-          <div className="rounded-md border border-border bg-background px-3 py-2 text-xs text-muted-foreground">
+        <div className="px-4 py-4 sm:px-5">
+          <div className="rounded-md border border-border bg-background px-3 py-2 text-[0.65rem] text-muted-foreground sm:text-xs">
             Search by AMC, fund name, or category...
           </div>
 
-          <div className="mt-4 divide-y divide-border">
+          <div className="mt-4 divide-y divide-border/50">
             {funds.map((fund) => (
               <div
                 key={fund.name}
-                className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:py-4"
               >
-                <div>
-                  <p className="text-xs font-semibold">{fund.name}</p>
+                <div className="min-w-0">
+                  <p className="truncate text-[0.65rem] font-semibold sm:text-xs">{fund.name}</p>
                   <div className="mt-1 flex items-center gap-1.5">
-                    <span className="rounded bg-muted px-1.5 py-0.5 text-[0.6rem] text-muted-foreground">
+                    <span className="rounded bg-muted px-1.5 py-0.5 text-[0.55rem] text-muted-foreground sm:text-[0.6rem]">
                       {fund.category}
                     </span>
-                    <span className="text-[0.6rem] text-muted-foreground">
+                    <span className="text-[0.55rem] text-muted-foreground sm:text-[0.6rem]">
                       {fund.subcategory}
                     </span>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-6 text-right">
+                <div className="flex items-center gap-4 sm:gap-6">
                   {Object.entries(fund.returns).map(([period, value]) => (
-                    <div key={period}>
-                      <p className="text-[0.6rem] text-muted-foreground">
-                        {period} Return
+                    <div key={period} className="text-left sm:text-right">
+                      <p className="text-[0.55rem] text-muted-foreground sm:text-[0.6rem]">
+                        {period}
                       </p>
-                      <p className="text-xs font-medium text-emerald-500">
+                      <p className="text-[0.65rem] font-medium text-emerald-500 sm:text-xs">
                         {value}
                       </p>
                     </div>
