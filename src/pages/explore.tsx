@@ -1,11 +1,11 @@
-import { useState, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback, useEffect, type MutableRefObject } from "react"
+import { useLocation, useOutletContext } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { type Fund } from "@/data/funds"
 import { fetchFunds, fetchBookmarks, addBookmark, removeBookmark } from "@/services/funds"
 import { FundCard } from "@/components/explore/fund-card"
 import { FundDetail } from "@/components/explore/fund-detail"
-import { Input } from "@/components/ui/input"
-import { IconSearch, IconBookmark, IconLoader2 } from "@tabler/icons-react"
+import { IconSearch, IconBookmark, IconLoader2, IconCommand } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/animated"
 import { toast } from "sonner"
@@ -18,10 +18,11 @@ type LayoutContext = {
 }
 
 export function ExplorePage() {
-  const [search] = useState("")
   const [activeCategory, setActiveCategory] = useState("All Funds")
   const [selectedFund, setSelectedFund] = useState<Fund | null>(null)
   const queryClient = useQueryClient()
+  const { setSearchOpen, selectFundRef } = useOutletContext<LayoutContext>()
+  const location = useLocation()
 
   const { data: funds = [], isLoading, isError } = useQuery({
     queryKey: ["funds"],
@@ -57,6 +58,22 @@ export function ExplorePage() {
     },
   })
 
+  // Register setSelectedFund so the layout can call it directly
+  useEffect(() => {
+    selectFundRef.current = setSelectedFund
+    return () => { selectFundRef.current = null }
+  }, [selectFundRef])
+
+  // Handle fund selection from global search (navigated here with state)
+  useEffect(() => {
+    const state = location.state as { selectedFundId?: string } | null
+    if (state?.selectedFundId) {
+      const fund = funds.find((f) => f.id === state.selectedFundId)
+      if (fund) setSelectedFund(fund)
+      window.history.replaceState({}, "")
+    }
+  }, [location.state, funds])
+
   const handleToggleSave = useCallback((fundId: string) => {
     const wasSaved = savedFundIds.includes(fundId)
     toggleSave(fundId)
@@ -71,14 +88,9 @@ export function ExplorePage() {
           : activeCategory === "Saved"
             ? savedFundIds.includes(f.id)
             : f.category === activeCategory
-      const matchesSearch =
-        !search ||
-        f.name.toLowerCase().includes(search.toLowerCase()) ||
-        f.amc.toLowerCase().includes(search.toLowerCase()) ||
-        f.subcategory.toLowerCase().includes(search.toLowerCase())
-      return matchesCategory && matchesSearch
+      return matchesCategory
     })
-  }, [search, activeCategory, savedFundIds, funds])
+  }, [activeCategory, savedFundIds, funds])
 
   return (
     <>
@@ -156,7 +168,7 @@ export function ExplorePage() {
           </p>
 
           {/* Fund grid */}
-          <StaggerContainer key={activeCategory + search} className="mt-4 grid gap-4 sm:grid-cols-2">
+          <StaggerContainer key={activeCategory} className="mt-4 grid gap-4 sm:grid-cols-2">
             {filtered.map((fund) => (
               <StaggerItem key={fund.id}>
                 <FundCard

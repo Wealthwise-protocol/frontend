@@ -1,5 +1,7 @@
 import { useEffect, useState, useMemo } from "react"
-import { funds, type Fund } from "@/data/funds"
+import { useQuery } from "@tanstack/react-query"
+import { type Fund } from "@/data/funds"
+import { fetchFunds } from "@/services/funds"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import {
@@ -16,6 +18,7 @@ import {
   IconTrendingUp,
   IconBookmark,
   IconBookmarkFilled,
+  IconLoader2,
 } from "@tabler/icons-react"
 
 const riskColors: Record<string, string> = {
@@ -42,6 +45,11 @@ export function FundSearchDialog({
 }) {
   const [query, setQuery] = useState("")
 
+  const { data: funds = [], isLoading } = useQuery({
+    queryKey: ["funds"],
+    queryFn: fetchFunds,
+  })
+
   // Reset query when dialog opens
   useEffect(() => {
     if (open) setQuery("")
@@ -57,7 +65,7 @@ export function FundSearchDialog({
         f.subcategory.toLowerCase().includes(q) ||
         f.category.toLowerCase().includes(q)
     )
-  }, [query])
+  }, [query, funds])
 
   // Group by category
   const grouped = useMemo(() => {
@@ -67,7 +75,6 @@ export function FundSearchDialog({
       list.push(fund)
       map.set(fund.category, list)
     }
-    // Sort by category order
     return categoryOrder
       .filter((cat) => map.has(cat))
       .map((cat) => ({ category: cat, funds: map.get(cat)! }))
@@ -93,14 +100,22 @@ export function FundSearchDialog({
           onValueChange={setQuery}
         />
         <CommandList className="max-h-80 sm:max-h-96">
-          <CommandEmpty>
-            <div className="flex flex-col items-center gap-2 py-4">
-              <p className="text-sm text-muted-foreground">No funds found</p>
-              <p className="text-xs text-muted-foreground/60">
-                Try searching by fund name, AMC, or category
-              </p>
+          {isLoading && (
+            <div className="flex items-center justify-center py-8">
+              <IconLoader2 className="size-5 animate-spin text-muted-foreground" />
             </div>
-          </CommandEmpty>
+          )}
+
+          {!isLoading && (
+            <CommandEmpty>
+              <div className="flex flex-col items-center gap-2 py-4">
+                <p className="text-sm text-muted-foreground">No funds found</p>
+                <p className="text-xs text-muted-foreground/60">
+                  Try searching by fund name, AMC, or category
+                </p>
+              </div>
+            </CommandEmpty>
+          )}
 
           {grouped.map((group, i) => (
             <div key={group.category}>

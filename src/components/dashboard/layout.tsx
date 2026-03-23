@@ -1,15 +1,16 @@
 import { useEffect, useState, useCallback, useRef } from "react"
 import { Outlet, useNavigate, useLocation } from "react-router-dom"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { SidebarProvider, BottomNav, useSidebarState } from "@/components/dashboard/sidebar"
 import { ProfileDropdown } from "@/components/dashboard/profile-dropdown"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { FundSearchDialog } from "@/components/explore/fund-search-dialog"
+import { fetchBookmarks, addBookmark, removeBookmark } from "@/services/funds"
 import { IconSearch, IconCommand } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
 import { usePortfolioStore } from "@/stores/portfolio-store"
 import { useSipStore } from "@/stores/sip-store"
 import { useTransactionStore } from "@/stores/transaction-store"
-import { useExploreStore } from "@/stores/explore-store"
 import { toast } from "sonner"
 import type { Fund } from "@/data/funds"
 
@@ -17,12 +18,41 @@ function LayoutShell() {
   const { collapsed } = useSidebarState()
   const navigate = useNavigate()
   const location = useLocation()
+  const queryClient = useQueryClient()
   const selectFundRef = useRef<((fund: Fund) => void) | null>(null)
   const initPortfolio = usePortfolioStore((s) => s.init)
   const initSips = useSipStore((s) => s.init)
   const initTransactions = useTransactionStore((s) => s.init)
-  const { savedFundIds, toggleSave } = useExploreStore()
   const [searchOpen, setSearchOpen] = useState(false)
+
+  const { data: savedFundIds = [] } = useQuery({
+    queryKey: ["bookmarks"],
+    queryFn: fetchBookmarks,
+  })
+
+  const { mutate: toggleSave } = useMutation({
+    mutationFn: (fundId: string) => {
+      const isSaved = savedFundIds.includes(fundId)
+      return isSaved ? removeBookmark(fundId) : addBookmark(fundId)
+    },
+    onMutate: async (fundId) => {
+      await queryClient.cancelQueries({ queryKey: ["bookmarks"] })
+      const previous = queryClient.getQueryData<string[]>(["bookmarks"])
+      queryClient.setQueryData<string[]>(["bookmarks"], (old = []) => {
+        return old.includes(fundId)
+          ? old.filter((id) => id !== fundId)
+          : [...old, fundId]
+      })
+      return { previous }
+    },
+    onError: (_err, _fundId, context) => {
+      queryClient.setQueryData(["bookmarks"], context?.previous)
+      toast.error("Failed to update bookmark")
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["bookmarks"] })
+    },
+  })
 
   useEffect(() => {
     initPortfolio()
@@ -50,10 +80,8 @@ function LayoutShell() {
 
   const handleSelectFund = useCallback((fund: Fund) => {
     if (location.pathname === "/dashboard/explore" && selectFundRef.current) {
-      // Already on explore — directly select the fund
       selectFundRef.current(fund)
     } else {
-      // Navigate to explore page with selected fund
       navigate("/dashboard/explore", { state: { selectedFundId: fund.id } })
     }
   }, [navigate, location.pathname])
