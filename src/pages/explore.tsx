@@ -1,12 +1,13 @@
 import { useState, useMemo, useCallback } from "react"
-import { funds, type Fund } from "@/data/funds"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { type Fund } from "@/data/funds"
+import { fetchFunds, fetchBookmarks, addBookmark, removeBookmark } from "@/services/funds"
 import { FundCard } from "@/components/explore/fund-card"
 import { FundDetail } from "@/components/explore/fund-detail"
 import { Input } from "@/components/ui/input"
-import { IconSearch, IconBookmark } from "@tabler/icons-react"
+import { IconSearch, IconBookmark, IconLoader2 } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/animated"
-import { useExploreStore } from "@/stores/explore-store"
 import { toast } from "sonner"
 
 const categories = ["All Funds", "Equity", "Debt", "ELSS", "Hybrid", "Index", "Saved"]
@@ -15,7 +16,41 @@ export function ExplorePage() {
   const [search, setSearch] = useState("")
   const [activeCategory, setActiveCategory] = useState("All Funds")
   const [selectedFund, setSelectedFund] = useState<Fund | null>(null)
-  const { savedFundIds, toggleSave } = useExploreStore()
+  const queryClient = useQueryClient()
+
+  const { data: funds = [], isLoading, isError } = useQuery({
+    queryKey: ["funds"],
+    queryFn: fetchFunds,
+  })
+
+  const { data: savedFundIds = [] } = useQuery({
+    queryKey: ["bookmarks"],
+    queryFn: fetchBookmarks,
+  })
+
+  const { mutate: toggleSave } = useMutation({
+    mutationFn: (fundId: string) => {
+      const isSaved = savedFundIds.includes(fundId)
+      return isSaved ? removeBookmark(fundId) : addBookmark(fundId)
+    },
+    onMutate: async (fundId) => {
+      await queryClient.cancelQueries({ queryKey: ["bookmarks"] })
+      const previous = queryClient.getQueryData<string[]>(["bookmarks"])
+      queryClient.setQueryData<string[]>(["bookmarks"], (old = []) => {
+        return old.includes(fundId)
+          ? old.filter((id) => id !== fundId)
+          : [...old, fundId]
+      })
+      return { previous }
+    },
+    onError: (_err, _fundId, context) => {
+      queryClient.setQueryData(["bookmarks"], context?.previous)
+      toast.error("Failed to update bookmark")
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["bookmarks"] })
+    },
+  })
 
   const handleToggleSave = useCallback((fundId: string) => {
     const wasSaved = savedFundIds.includes(fundId)
@@ -38,7 +73,7 @@ export function ExplorePage() {
         f.subcategory.toLowerCase().includes(search.toLowerCase())
       return matchesCategory && matchesSearch
     })
-  }, [search, activeCategory, savedFundIds])
+  }, [search, activeCategory, savedFundIds, funds])
 
   return (
     <>
@@ -87,33 +122,52 @@ export function ExplorePage() {
         ))}
       </div>
 
-      {/* Results count */}
-      <p className="mt-4 text-xs text-muted-foreground">
-        {filtered.length} fund{filtered.length !== 1 ? "s" : ""} found
-      </p>
-
-      {/* Fund grid */}
-      <StaggerContainer key={activeCategory + search} className="mt-4 grid gap-4 sm:grid-cols-2">
-        {filtered.map((fund) => (
-          <StaggerItem key={fund.id}>
-            <FundCard
-              fund={fund}
-              onSelect={setSelectedFund}
-              saved={savedFundIds.includes(fund.id)}
-              onToggleSave={handleToggleSave}
-            />
-          </StaggerItem>
-        ))}
-      </StaggerContainer>
-
-      {filtered.length === 0 && (
-        <div className="mt-12 text-center">
-          <p className="text-sm text-muted-foreground">
-            {activeCategory === "Saved"
-              ? "No saved funds yet. Bookmark funds to see them here."
-              : "No funds found matching your criteria."}
-          </p>
+      {/* Loading state */}
+      {isLoading && (
+        <div className="mt-12 flex flex-col items-center gap-2">
+          <IconLoader2 className="size-6 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">Loading funds...</p>
         </div>
+      )}
+
+      {/* Error state */}
+      {isError && (
+        <div className="mt-12 text-center">
+          <p className="text-sm text-destructive">Failed to load funds. Please try again later.</p>
+        </div>
+      )}
+
+      {/* Results count */}
+      {!isLoading && !isError && (
+        <>
+          <p className="mt-4 text-xs text-muted-foreground">
+            {filtered.length} fund{filtered.length !== 1 ? "s" : ""} found
+          </p>
+
+          {/* Fund grid */}
+          <StaggerContainer key={activeCategory + search} className="mt-4 grid gap-4 sm:grid-cols-2">
+            {filtered.map((fund) => (
+              <StaggerItem key={fund.id}>
+                <FundCard
+                  fund={fund}
+                  onSelect={setSelectedFund}
+                  saved={savedFundIds.includes(fund.id)}
+                  onToggleSave={handleToggleSave}
+                />
+              </StaggerItem>
+            ))}
+          </StaggerContainer>
+
+          {filtered.length === 0 && (
+            <div className="mt-12 text-center">
+              <p className="text-sm text-muted-foreground">
+                {activeCategory === "Saved"
+                  ? "No saved funds yet. Bookmark funds to see them here."
+                  : "No funds found matching your criteria."}
+              </p>
+            </div>
+          )}
+        </>
       )}
 
       {/* Fund detail drawer */}
