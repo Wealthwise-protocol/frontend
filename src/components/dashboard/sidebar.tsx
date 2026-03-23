@@ -2,7 +2,6 @@ import type React from "react"
 import { createContext, useContext, useState } from "react"
 import { Link, useLocation } from "react-router-dom"
 import {
-  IconChartBar,
   IconChevronsLeft,
   IconChevronsRight,
   IconLayoutDashboard,
@@ -69,7 +68,7 @@ function SidebarInner({
           collapsed ? "justify-center px-0" : "px-3"
         )}
       >
-        <IconChartBar className="size-5 shrink-0 text-primary" />
+        <img src="/wealthwiselogonobg.png" alt="WealthWise" className="size-6 shrink-0" />
         {!collapsed && (
           <span className="text-sm font-bold tracking-wide text-primary">
             WealthWise

@@ -2,7 +2,10 @@ export function Footer() {
   return (
     <footer className="border-t border-border">
       <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 py-6 sm:flex-row sm:px-6">
-        <span className="text-xs font-semibold">WealthWise</span>
+        <div className="flex items-center gap-2">
+          <img src="/wealthwiselogonobg.png" alt="WealthWise" className="size-5" />
+          <span className="text-xs font-semibold">WealthWise</span>
+        </div>
         <div className="flex flex-wrap items-center justify-center gap-4 text-[0.65rem] text-muted-foreground sm:gap-6 sm:text-xs">
           <a href="#" className="transition-colors hover:text-foreground">
             Privacy Policy

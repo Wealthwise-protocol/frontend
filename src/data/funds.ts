@@ -1,5 +1,6 @@
 export type Fund = {
   id: string
+  schemeCode?: number
   name: string
   amc: string
   category: "Equity" | "Debt" | "Hybrid" | "ELSS" | "Index"
