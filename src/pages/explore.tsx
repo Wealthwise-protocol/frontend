@@ -1,9 +1,9 @@
-import { useState, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback, useEffect, type MutableRefObject } from "react"
+import { useLocation, useOutletContext } from "react-router-dom"
 import { funds, type Fund } from "@/data/funds"
 import { FundCard } from "@/components/explore/fund-card"
 import { FundDetail } from "@/components/explore/fund-detail"
-import { Input } from "@/components/ui/input"
-import { IconSearch, IconBookmark } from "@tabler/icons-react"
+import { IconSearch, IconBookmark, IconCommand } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/animated"
 import { useExploreStore } from "@/stores/explore-store"
@@ -11,11 +11,35 @@ import { toast } from "sonner"
 
 const categories = ["All Funds", "Equity", "Debt", "ELSS", "Hybrid", "Index", "Saved"]
 
+type LayoutContext = {
+  setSearchOpen: (open: boolean) => void
+  selectFundRef: MutableRefObject<((fund: Fund) => void) | null>
+}
+
 export function ExplorePage() {
-  const [search, setSearch] = useState("")
+  const [search] = useState("")
   const [activeCategory, setActiveCategory] = useState("All Funds")
   const [selectedFund, setSelectedFund] = useState<Fund | null>(null)
   const { savedFundIds, toggleSave } = useExploreStore()
+  const { setSearchOpen, selectFundRef } = useOutletContext<LayoutContext>()
+  const location = useLocation()
+
+  // Register setSelectedFund so the layout can call it directly
+  useEffect(() => {
+    selectFundRef.current = setSelectedFund
+    return () => { selectFundRef.current = null }
+  }, [selectFundRef])
+
+  // Handle fund selection from global search (navigated here with state)
+  useEffect(() => {
+    const state = location.state as { selectedFundId?: string } | null
+    if (state?.selectedFundId) {
+      const fund = funds.find((f) => f.id === state.selectedFundId)
+      if (fund) setSelectedFund(fund)
+      // Clear the state so it doesn't re-trigger
+      window.history.replaceState({}, "")
+    }
+  }, [location.state])
 
   const handleToggleSave = useCallback((fundId: string) => {
     const wasSaved = savedFundIds.includes(fundId)
@@ -46,15 +70,21 @@ export function ExplorePage() {
         <h1 className="text-2xl font-bold tracking-tight">Fund Explorer</h1>
       </FadeIn>
 
-      {/* Search */}
-      <FadeIn delay={0.1} className="relative mt-6">
-        <IconSearch className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search for mutual funds, categories, or AMCs..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-9"
-        />
+      {/* Search trigger — clicking opens the command palette */}
+      <FadeIn delay={0.1}>
+        <button
+          type="button"
+          onClick={() => setSearchOpen(true)}
+          className="relative mt-6 flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 text-sm shadow-xs transition-colors hover:border-primary/40 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+        >
+          <IconSearch className="mr-2 size-4 shrink-0 text-muted-foreground" />
+          <span className="flex-1 text-left text-xs text-muted-foreground">
+            Search for mutual funds, categories, or AMCs...
+          </span>
+          <kbd className="pointer-events-none hidden h-5 items-center gap-0.5 rounded border border-border bg-muted px-1.5 text-[0.6rem] font-medium text-muted-foreground sm:inline-flex">
+            <IconCommand className="size-2.5" />K
+          </kbd>
+        </button>
       </FadeIn>
 
       {/* Category filters */}
