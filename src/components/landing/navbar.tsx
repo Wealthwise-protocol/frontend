@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { IconLeaf, IconMenu2, IconX } from "@tabler/icons-react"
+import { IconMenu2, IconX } from "@tabler/icons-react"
 import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -20,7 +20,7 @@ export function Navbar() {
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
         <div className="flex items-center gap-2">
-          <IconLeaf className="size-5 text-primary" />
+          <img src="/wealthwiselogonobg.png" alt="WealthWise" className="size-6" />
           <span className="text-sm font-semibold">WealthWise</span>
         </div>
 
