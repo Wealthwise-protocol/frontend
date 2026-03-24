@@ -98,10 +98,10 @@ function LayoutShell() {
         <button
           type="button"
           onClick={() => setSearchOpen(true)}
-          className="flex h-8 items-center gap-2 rounded-md border border-border bg-muted/50 px-3 text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+          className="flex h-8 items-center gap-2 rounded-md border border-border bg-muted/50 px-2 text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground sm:px-3"
         >
-          <IconSearch className="size-3.5" />
-          <span className="hidden sm:inline">Search funds...</span>
+          <IconSearch className="size-3.5 shrink-0" />
+          <span className="hidden text-muted-foreground sm:inline">Search funds...</span>
           <kbd className="pointer-events-none hidden h-5 items-center gap-0.5 rounded border border-border bg-background px-1.5 text-[0.6rem] font-medium sm:inline-flex">
             <IconCommand className="size-2.5" />K
           </kbd>

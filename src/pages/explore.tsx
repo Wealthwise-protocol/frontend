@@ -95,7 +95,7 @@ export function ExplorePage() {
   return (
     <>
       <FadeIn>
-        <h1 className="text-2xl font-bold tracking-tight">Fund Explorer</h1>
+        <h1 className="text-xl font-bold tracking-tight sm:text-2xl">Fund Explorer</h1>
       </FadeIn>
 
       {/* Search trigger — clicking opens the command palette */}
@@ -103,7 +103,7 @@ export function ExplorePage() {
         <button
           type="button"
           onClick={() => setSearchOpen(true)}
-          className="relative mt-6 flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 text-sm shadow-xs transition-colors hover:border-primary/40 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+          className="relative mt-4 flex h-9 w-full items-center rounded-md border border-border bg-transparent px-3 text-sm shadow-xs transition-colors hover:border-primary/40 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none sm:mt-6"
         >
           <IconSearch className="mr-2 size-4 shrink-0 text-muted-foreground" />
           <span className="flex-1 text-left text-xs text-muted-foreground">

@@ -28,11 +28,11 @@ export function FundCard({
       className="cursor-pointer transition-all duration-200 hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5"
       onClick={() => onSelect(fund)}
     >
-      <CardContent className="p-5">
+      <CardContent className="p-3.5 sm:p-5">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <h3 className="truncate text-sm font-semibold">{fund.name}</h3>
-            <p className="mt-0.5 text-xs text-muted-foreground">{fund.amc}</p>
+            <h3 className="line-clamp-1 text-xs font-semibold sm:text-sm">{fund.name}</h3>
+            <p className="mt-0.5 text-[0.65rem] text-muted-foreground sm:text-xs">{fund.amc}</p>
           </div>
           <button
             className={cn(
@@ -55,43 +55,44 @@ export function FundCard({
           </button>
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <Badge variant="outline" className="text-[0.6rem]">
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 sm:mt-3 sm:gap-2">
+          <Badge variant="outline" className="text-[0.55rem] sm:text-[0.6rem]">
             {fund.category} - {fund.subcategory}
           </Badge>
           <Badge
             variant="outline"
-            className={cn("text-[0.6rem]", riskColors[fund.risk])}
+            className={cn("text-[0.55rem] sm:text-[0.6rem]", riskColors[fund.risk])}
           >
             {fund.risk} RISK
           </Badge>
         </div>
 
-        <div className="mt-4 grid grid-cols-3 gap-2">
+        <div className="mt-3 grid grid-cols-3 gap-1.5 sm:mt-4 sm:gap-2">
           {(["1Y", "3Y", "5Y"] as const).map((period) => (
             <div
               key={period}
-              className="rounded-md border border-border px-2 py-2 text-center"
+              className="rounded-md border border-border px-1.5 py-1.5 text-center sm:px-2 sm:py-2"
             >
-              <p className="text-[0.6rem] text-muted-foreground">{period}</p>
-              <p className="mt-0.5 text-xs font-semibold text-emerald-500">
+              <p className="text-[0.55rem] text-muted-foreground sm:text-[0.6rem]">{period}</p>
+              <p className="mt-0.5 text-[0.65rem] font-semibold text-emerald-500 sm:text-xs">
                 {fund.returns[period]}%
               </p>
             </div>
           ))}
         </div>
 
-        <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
+        <div className="mt-3 flex items-center justify-between border-t border-border pt-2.5 sm:mt-4 sm:pt-3">
           <div>
-            <p className="text-[0.6rem] text-muted-foreground">Min SIP</p>
-            <p className="text-xs font-semibold">
+            <p className="text-[0.55rem] text-muted-foreground sm:text-[0.6rem]">Min SIP</p>
+            <p className="text-[0.65rem] font-semibold sm:text-xs">
               ₹{fund.minSip.toLocaleString("en-IN")}
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-1.5 sm:gap-2">
             <Button
               variant="outline"
               size="sm"
+              className="h-7 px-2.5 text-[0.65rem] sm:h-8 sm:px-3 sm:text-xs"
               onClick={(e) => {
                 e.stopPropagation()
                 onSelect(fund)
@@ -101,6 +102,7 @@ export function FundCard({
             </Button>
             <Button
               size="sm"
+              className="h-7 px-2.5 text-[0.65rem] sm:h-8 sm:px-3 sm:text-xs"
               onClick={(e) => {
                 e.stopPropagation()
                 onSelect(fund)
