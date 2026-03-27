@@ -67,6 +67,7 @@ export const useSipStore = create<SipState>()(
             ...state.sips,
             {
               id: `sip-${Date.now()}`,
+              fundId: null,
               fundName,
               monthlyAmt: amount,
               startDate: dateStr,

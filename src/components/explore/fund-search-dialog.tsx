@@ -45,27 +45,30 @@ export function FundSearchDialog({
 }) {
   const [query, setQuery] = useState("")
 
-  const { data: funds = [], isLoading } = useQuery({
-    queryKey: ["funds"],
-    queryFn: fetchFunds,
+  const { data, isLoading } = useQuery({
+    queryKey: ["funds", "search"],
+    queryFn: () => fetchFunds(0, 100),
+    enabled: open,
   })
+
+  const fundList: Fund[] = data?.content ?? []
 
   // Reset query when dialog opens
   useEffect(() => {
     if (open) setQuery("")
   }, [open])
 
-  const filtered = useMemo(() => {
-    if (!query) return funds
+  const filtered: Fund[] = useMemo(() => {
+    if (!query) return fundList
     const q = query.toLowerCase()
-    return funds.filter(
+    return fundList.filter(
       (f) =>
         f.name.toLowerCase().includes(q) ||
         f.amc.toLowerCase().includes(q) ||
         f.subcategory.toLowerCase().includes(q) ||
         f.category.toLowerCase().includes(q)
     )
-  }, [query, funds])
+  }, [query, fundList])
 
   // Group by category
   const grouped = useMemo(() => {

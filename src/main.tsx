@@ -8,6 +8,7 @@ import { Toaster } from "@/components/ui/sonner"
 import "./index.css"
 import App from "./App.tsx"
 import { ThemeProvider } from "@/components/theme-provider.tsx"
+import { ErrorBoundary } from "@/components/error-boundary.tsx"
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -25,7 +26,9 @@ createRoot(document.getElementById("root")!).render(
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <TooltipProvider delayDuration={0}>
-            <App />
+            <ErrorBoundary>
+              <App />
+            </ErrorBoundary>
             <Toaster position="top-center" richColors closeButton />
           </TooltipProvider>
         </ThemeProvider>

@@ -1,16 +1,30 @@
 import { useState, useMemo, useCallback, useEffect, type MutableRefObject } from "react"
 import { useLocation, useOutletContext } from "react-router-dom"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query"
 import { type Fund } from "@/data/funds"
 import { fetchFunds, fetchBookmarks, addBookmark, removeBookmark } from "@/services/funds"
 import { FundCard } from "@/components/explore/fund-card"
 import { FundDetail } from "@/components/explore/fund-detail"
-import { IconSearch, IconBookmark, IconLoader2, IconCommand } from "@tabler/icons-react"
+import { Button } from "@/components/ui/button"
+import { IconSearch, IconBookmark, IconLoader2, IconCommand, IconChevronLeft, IconChevronRight } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/animated"
 import { toast } from "sonner"
 
+const PAGE_SIZE = 12
 const categories = ["All Funds", "Equity", "Debt", "ELSS", "Hybrid", "Index", "Saved"]
+
+function getPageNumbers(current: number, total: number): (number | "ellipsis")[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i)
+  const pages: (number | "ellipsis")[] = [0]
+  if (current > 2) pages.push("ellipsis")
+  for (let i = Math.max(1, current - 1); i <= Math.min(total - 2, current + 1); i++) {
+    pages.push(i)
+  }
+  if (current < total - 3) pages.push("ellipsis")
+  pages.push(total - 1)
+  return pages
+}
 
 type LayoutContext = {
   setSearchOpen: (open: boolean) => void
@@ -20,19 +34,37 @@ type LayoutContext = {
 export function ExplorePage() {
   const [activeCategory, setActiveCategory] = useState("All Funds")
   const [selectedFund, setSelectedFund] = useState<Fund | null>(null)
+  const [page, setPage] = useState(0)
   const queryClient = useQueryClient()
   const { setSearchOpen, selectFundRef } = useOutletContext<LayoutContext>()
   const location = useLocation()
 
-  const { data: funds = [], isLoading, isError } = useQuery({
-    queryKey: ["funds"],
-    queryFn: fetchFunds,
+  const isSavedTab = activeCategory === "Saved"
+
+  const { data, isLoading: isPageLoading, isError: isPageError, isPlaceholderData } = useQuery({
+    queryKey: ["funds", page],
+    queryFn: () => fetchFunds(page, PAGE_SIZE),
+    placeholderData: keepPreviousData,
+    enabled: !isSavedTab,
   })
 
   const { data: savedFundIds = [] } = useQuery({
     queryKey: ["bookmarks"],
     queryFn: fetchBookmarks,
   })
+
+  // Fetch all funds to resolve saved tab (need full fund objects for bookmarked IDs)
+  const { data: allFundsData, isLoading: isSavedLoading, isError: isSavedError } = useQuery({
+    queryKey: ["funds", "all"],
+    queryFn: () => fetchFunds(0, 100),
+    enabled: isSavedTab,
+  })
+
+  const funds = isSavedTab ? (allFundsData?.content ?? []) : (data?.content ?? [])
+  const totalPages = data?.totalPages ?? 0
+  const totalElements = data?.totalElements ?? 0
+  const isLoading = isSavedTab ? isSavedLoading : isPageLoading
+  const isError = isSavedTab ? isSavedError : isPageError
 
   const { mutate: toggleSave } = useMutation({
     mutationFn: (fundId: string) => {
@@ -120,7 +152,10 @@ export function ExplorePage() {
         {categories.map((cat) => (
           <button
             key={cat}
-            onClick={() => setActiveCategory(cat)}
+            onClick={() => {
+              setActiveCategory(cat)
+              setPage(0)
+            }}
             className={cn(
               "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
               activeCategory === cat
@@ -164,11 +199,13 @@ export function ExplorePage() {
       {!isLoading && !isError && (
         <>
           <p className="mt-4 text-xs text-muted-foreground">
-            {filtered.length} fund{filtered.length !== 1 ? "s" : ""} found
+            {activeCategory === "All Funds"
+              ? `Showing ${funds.length} of ${totalElements} funds`
+              : `${filtered.length} fund${filtered.length !== 1 ? "s" : ""} found`}
           </p>
 
           {/* Fund grid */}
-          <StaggerContainer key={activeCategory} className="mt-4 grid gap-4 sm:grid-cols-2">
+          <StaggerContainer key={`${activeCategory}-${page}`} className="mt-4 grid gap-4 sm:grid-cols-2">
             {filtered.map((fund) => (
               <StaggerItem key={fund.id}>
                 <FundCard
@@ -189,6 +226,59 @@ export function ExplorePage() {
                   : "No funds found matching your criteria."}
               </p>
             </div>
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && activeCategory === "All Funds" && (
+            <nav
+              role="navigation"
+              aria-label="pagination"
+              className="mt-6 flex items-center justify-center gap-1"
+            >
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1 px-2.5 text-xs"
+                disabled={page === 0}
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+              >
+                <IconChevronLeft className="size-3.5" />
+                <span className="hidden sm:inline">Previous</span>
+              </Button>
+
+              {getPageNumbers(page, totalPages).map((p, i) =>
+                p === "ellipsis" ? (
+                  <span
+                    key={`ellipsis-${i}`}
+                    className="flex size-8 items-center justify-center text-xs text-muted-foreground"
+                  >
+                    ...
+                  </span>
+                ) : (
+                  <Button
+                    key={p}
+                    variant={p === page ? "default" : "outline"}
+                    size="sm"
+                    className="size-8 text-xs"
+                    onClick={() => setPage(p)}
+                    disabled={isPlaceholderData}
+                  >
+                    {p + 1}
+                  </Button>
+                ),
+              )}
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1 px-2.5 text-xs"
+                disabled={page >= totalPages - 1}
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+              >
+                <span className="hidden sm:inline">Next</span>
+                <IconChevronRight className="size-3.5" />
+              </Button>
+            </nav>
           )}
         </>
       )}

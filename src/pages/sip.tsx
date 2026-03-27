@@ -1,7 +1,8 @@
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Link } from "react-router-dom"
 import { toast } from "sonner"
-import { useSipStore } from "@/stores/sip-store"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { fetchSips } from "@/services/funds"
 import type { SIP } from "@/types"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -43,6 +44,7 @@ import {
   IconChevronDown,
   IconChevronUp,
   IconCheck,
+  IconLoader2,
 } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
@@ -318,7 +320,16 @@ function SIPRow({
 }
 
 export function SipPage() {
-  const { sips: sipList, togglePause: storeTogglePause, editAmount: storeEditAmount, cancelSip: storeCancelSip } = useSipStore()
+  const queryClient = useQueryClient()
+  const { data: rawSips = [], isLoading, isError } = useQuery({
+    queryKey: ["sips"],
+    queryFn: fetchSips,
+  })
+
+  const sipList = useMemo(
+    () => [...rawSips].sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()),
+    [rawSips],
+  )
 
   // Pause/Resume dialog
   const [pauseTarget, setPauseTarget] = useState<SIP | null>(null)
@@ -346,7 +357,14 @@ export function SipPage() {
 
   function confirmTogglePause() {
     if (!pauseTarget) return
-    storeTogglePause(pauseTarget.id)
+    // Optimistic update on local cache
+    queryClient.setQueryData<SIP[]>(["sips"], (old = []) =>
+      old.map((s) => {
+        if (s.id !== pauseTarget.id) return s
+        const newStatus = s.status === "ACTIVE" ? "PAUSED" : "ACTIVE"
+        return { ...s, status: newStatus as "ACTIVE" | "PAUSED" }
+      }),
+    )
     toast.success(pauseTarget.status === "ACTIVE" ? "SIP paused" : "SIP resumed")
     setPauseTarget(null)
   }
@@ -361,7 +379,10 @@ export function SipPage() {
     if (!editTarget) return
     const newAmt = parseInt(editAmount, 10)
     if (isNaN(newAmt) || newAmt < 100) return
-    storeEditAmount(editTarget.id, newAmt)
+    // Optimistic update on local cache
+    queryClient.setQueryData<SIP[]>(["sips"], (old = []) =>
+      old.map((s) => (s.id === editTarget.id ? { ...s, monthlyAmt: newAmt } : s)),
+    )
     toast.success("SIP amount updated")
     setEditSaved(true)
     setTimeout(() => {
@@ -376,7 +397,10 @@ export function SipPage() {
 
   function confirmCancel() {
     if (!cancelTargetId) return
-    storeCancelSip(cancelTargetId)
+    // Optimistic update on local cache
+    queryClient.setQueryData<SIP[]>(["sips"], (old = []) =>
+      old.filter((s) => s.id !== cancelTargetId),
+    )
     toast.success("SIP cancelled")
     setCancelTargetId(null)
   }
@@ -395,7 +419,24 @@ export function SipPage() {
         </div>
       </FadeIn>
 
+      {/* Loading state */}
+      {isLoading && (
+        <div className="mt-12 flex flex-col items-center gap-2">
+          <IconLoader2 className="size-6 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">Loading SIPs...</p>
+        </div>
+      )}
+
+      {/* Error state */}
+      {isError && (
+        <div className="mt-12 text-center">
+          <p className="text-sm text-destructive">Failed to load SIPs. Please try again later.</p>
+        </div>
+      )}
+
       {/* Stat cards */}
+      {!isLoading && !isError && (
+      <>
       <StaggerContainer className="mt-6 grid gap-4 sm:grid-cols-3">
         <StaggerItem>
           <Card>
@@ -508,6 +549,8 @@ export function SipPage() {
           </CardContent>
         </Card>
       </FadeIn>
+      </>
+      )}
 
       {/* ── Pause / Resume confirmation ── */}
       <AlertDialog open={!!pauseTarget} onOpenChange={() => setPauseTarget(null)}>
