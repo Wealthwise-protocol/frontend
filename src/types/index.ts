@@ -27,6 +27,7 @@ export type Installment = {
 
 export type SIP = {
   id: string
+  fundId: string | null
   fundName: string
   monthlyAmt: number
   startDate: string

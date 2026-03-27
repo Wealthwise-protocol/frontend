@@ -1,6 +1,7 @@
 import { useState } from "react"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import type { Fund } from "@/data/funds"
-import { useSipStore } from "@/stores/sip-store"
+import { createSip } from "@/services/funds"
 import { useTransactionStore } from "@/stores/transaction-store"
 import { usePortfolioStore } from "@/stores/portfolio-store"
 import { toast } from "sonner"
@@ -75,7 +76,6 @@ export function FundDetail({
   onClose: () => void
 }) {
   const isDesktop = useMediaQuery("(min-width: 768px)")
-  const createSip = useSipStore((s) => s.createSip)
   const addTransaction = useTransactionStore((s) => s.addTransaction)
   const addHolding = usePortfolioStore((s) => s.addHolding)
   const [investTab, setInvestTab] = useState("sip")
@@ -84,6 +84,15 @@ export function FundDetail({
   const [step, setStep] = useState<"details" | "confirm" | "success">(
     "details"
   )
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const queryClient = useQueryClient()
+
+  const sipMutation = useMutation({
+    mutationFn: createSip,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["sips"] })
+    },
+  })
 
   const handleClose = () => {
     setStep("details")
@@ -96,7 +105,7 @@ export function FundDetail({
     setStep("confirm")
   }
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!fund) return
 
     const numAmount = Number(amount)
@@ -104,33 +113,44 @@ export function FundDetail({
     const now = new Date()
     const dateStr = now.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
 
-    if (investTab === "sip") {
-      createSip(fund.name, numAmount)
+    setIsSubmitting(true)
+
+    try {
+      if (investTab === "sip") {
+        await sipMutation.mutateAsync({
+          fundId: fund.id,
+          monthlyAmt: numAmount,
+        })
+      }
+
+      addTransaction({
+        date: dateStr,
+        fundName: fund.name,
+        type: investTab === "sip" ? "SIP" : "Lumpsum",
+        amount: numAmount,
+        units,
+        nav: fund.nav,
+        status: "Success",
+      })
+
+      addHolding({
+        name: fund.name,
+        category: fund.category,
+        units,
+        avgNav: fund.nav,
+        curNav: fund.nav,
+        invested: numAmount,
+        curValue: numAmount,
+        gain: 0,
+      })
+
+      toast.success(investTab === "sip" ? "SIP created successfully!" : "Investment successful!")
+      setStep("success")
+    } catch {
+      toast.error("Failed to create SIP. Please try again.")
+    } finally {
+      setIsSubmitting(false)
     }
-
-    addTransaction({
-      date: dateStr,
-      fundName: fund.name,
-      type: investTab === "sip" ? "SIP" : "Lumpsum",
-      amount: numAmount,
-      units,
-      nav: fund.nav,
-      status: "Success",
-    })
-
-    addHolding({
-      name: fund.name,
-      category: fund.category,
-      units,
-      avgNav: fund.nav,
-      curNav: fund.nav,
-      invested: numAmount,
-      curValue: numAmount,
-      gain: 0,
-    })
-
-    toast.success(investTab === "sip" ? "SIP created successfully!" : "Investment successful!")
-    setStep("success")
   }
 
   if (!fund) return null
@@ -515,9 +535,8 @@ export function FundDetail({
               >
                 Back
               </Button>
-              <Button className="flex-1" onClick={handleConfirm}>
-                Confirm{" "}
-                {investTab === "sip" ? "SIP" : "Investment"}
+              <Button className="flex-1" onClick={handleConfirm} disabled={isSubmitting}>
+                {isSubmitting ? "Processing..." : `Confirm ${investTab === "sip" ? "SIP" : "Investment"}`}
               </Button>
             </div>
           </div>

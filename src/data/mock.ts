@@ -92,6 +92,7 @@ export const mockAssetAllocation = [
 export const mockSips: SIP[] = [
   {
     id: "sip-1",
+    fundId: null,
     fundName: "Parag Parikh Flexi Cap Fund",
     monthlyAmt: 10000,
     startDate: "12 Jan 2022",
@@ -125,6 +126,7 @@ export const mockSips: SIP[] = [
   },
   {
     id: "sip-2",
+    fundId: null,
     fundName: "Nippon India Small Cap Fund",
     monthlyAmt: 5000,
     startDate: "05 Mar 2021",
@@ -158,6 +160,7 @@ export const mockSips: SIP[] = [
   },
   {
     id: "sip-3",
+    fundId: null,
     fundName: "HDFC Balanced Advantage Fund",
     monthlyAmt: 7500,
     startDate: "10 Jun 2023",
@@ -184,6 +187,7 @@ export const mockSips: SIP[] = [
   },
   {
     id: "sip-4",
+    fundId: null,
     fundName: "SBI Liquid Fund",
     monthlyAmt: 15000,
     startDate: "01 Jan 2023",
