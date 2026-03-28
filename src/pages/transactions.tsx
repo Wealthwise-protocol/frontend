@@ -228,8 +228,8 @@ function TransactionRow({ tx }: { tx: Transaction }) {
             {formatCurrency(tx.amount)}
           </span>
         </TableCell>
-        <TableCell className="text-right text-xs">₹{tx.nav.toFixed(2)}</TableCell>
-        <TableCell className="text-right text-xs">{tx.units.toFixed(3)}</TableCell>
+        <TableCell className="text-right text-xs">₹{(tx.nav ?? 0).toFixed(2)}</TableCell>
+        <TableCell className="text-right text-xs">{(tx.units ?? 0).toFixed(3)}</TableCell>
         <TableCell>
           <Badge
             variant="outline"
@@ -277,11 +277,11 @@ function TransactionRow({ tx }: { tx: Transaction }) {
               </div>
               <div className="text-center">
                 <span className="text-muted-foreground">NAV</span>
-                <p className="text-xs font-medium">₹{tx.nav.toFixed(2)}</p>
+                <p className="text-xs font-medium">₹{(tx.nav ?? 0).toFixed(2)}</p>
               </div>
               <div className="text-right">
                 <span className="text-muted-foreground">Units</span>
-                <p className="text-xs font-medium">{tx.units.toFixed(3)}</p>
+                <p className="text-xs font-medium">{(tx.units ?? 0).toFixed(3)}</p>
               </div>
             </div>
           </div>

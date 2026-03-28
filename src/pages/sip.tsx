@@ -267,10 +267,10 @@ function SIPRow({
                           {formatCurrency(inst.amount)}
                         </td>
                         <td className="py-2 text-right text-xs">
-                          ₹{inst.nav.toFixed(2)}
+                          ₹{(inst.nav ?? 0).toFixed(2)}
                         </td>
                         <td className="py-2 text-right text-xs">
-                          {inst.units.toFixed(3)}
+                          {(inst.units ?? 0).toFixed(3)}
                         </td>
                         <td className="py-2 text-right text-xs font-medium text-emerald-500">
                           {inst.status}
@@ -301,11 +301,11 @@ function SIPRow({
                       </div>
                       <div className="text-center">
                         <span className="text-muted-foreground">NAV</span>
-                        <p className="text-xs">₹{inst.nav.toFixed(2)}</p>
+                        <p className="text-xs">₹{(inst.nav ?? 0).toFixed(2)}</p>
                       </div>
                       <div className="text-right">
                         <span className="text-muted-foreground">Units</span>
-                        <p className="text-xs">{inst.units.toFixed(3)}</p>
+                        <p className="text-xs">{(inst.units ?? 0).toFixed(3)}</p>
                       </div>
                     </div>
                   </div>

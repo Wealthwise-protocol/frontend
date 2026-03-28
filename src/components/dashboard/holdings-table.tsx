@@ -59,13 +59,13 @@ export function HoldingsTable() {
                     {h.category}
                   </TableCell>
                   <TableCell className="text-right text-xs">
-                    {h.units.toFixed(2)}
+                    {(h.units ?? 0).toFixed(2)}
                   </TableCell>
                   <TableCell className="text-right text-xs">
-                    {h.avgNav.toFixed(2)}
+                    {(h.avgNav ?? 0).toFixed(2)}
                   </TableCell>
                   <TableCell className="text-right text-xs">
-                    {h.curNav.toFixed(2)}
+                    {(h.curNav ?? 0).toFixed(2)}
                   </TableCell>
                   <TableCell className="text-right text-xs">
                     {formatCurrency(h.invested)}
