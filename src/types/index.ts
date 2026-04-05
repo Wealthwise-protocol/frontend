@@ -18,11 +18,12 @@ export type SignUpPayload = {
 }
 
 export type Installment = {
-  date: string
+  id: string
+  installmentDate: string
   amount: number
   nav: number
   units: number
-  status: "Success" | "Failed" | "Pending"
+  status: "COMPLETED" | "FAILED" | "PENDING"
 }
 
 export type SIP = {

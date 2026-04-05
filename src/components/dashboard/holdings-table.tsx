@@ -1,4 +1,6 @@
+import { Link } from "react-router-dom"
 import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import {
   Table,
   TableBody,
@@ -7,14 +9,32 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { usePortfolioStore } from "@/stores/portfolio-store"
+import { usePortfolio } from "@/hooks/use-portfolio"
+import { IconLoader2, IconPlus } from "@tabler/icons-react"
 
 function formatCurrency(n: number) {
   return `₹${n.toLocaleString("en-IN")}`
 }
 
 export function HoldingsTable() {
-  const holdings = usePortfolioStore((s) => s.holdings)
+  const { data, isLoading, isError } = usePortfolio()
+  const holdings = data?.holdings ?? []
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <IconLoader2 className="size-6 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <p className="text-sm text-destructive">Failed to load holdings.</p>
+      </div>
+    )
+  }
 
   return (
     <Card>
@@ -81,6 +101,21 @@ export function HoldingsTable() {
                   </TableCell>
                 </TableRow>
               ))}
+              {holdings.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={8} className="py-12 text-center">
+                    <p className="text-sm text-muted-foreground">
+                      No holdings yet. Start investing to build your portfolio.
+                    </p>
+                    <Button size="sm" className="mt-4" asChild>
+                      <Link to="/dashboard/explore">
+                        <IconPlus className="mr-1 size-3.5" />
+                        Explore Funds
+                      </Link>
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </div>

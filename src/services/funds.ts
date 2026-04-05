@@ -1,5 +1,6 @@
 import { api } from "./api"
 import type { Fund } from "@/data/funds"
+import type { Holding } from "@/types"
 
 export type PaginatedResponse<T> = {
   content: T[]
@@ -35,6 +36,45 @@ export async function removeBookmark(fundId: string): Promise<void> {
   await api.delete(`/bookmarks/${fundId}`)
 }
 
+// ── Portfolio ───────────────────────────────────────────────────
+
+export type PortfolioSummary = {
+  currentValue: number
+  gainPercent: number
+  totalGain: number
+  totalInvested: number
+}
+
+export type PortfolioAllDetails = {
+  assetAllocation: { label: string; name: string; value: number }[]
+  holdings: Holding[]
+  portfolioHistory: { month: string; value: number }[]
+  summary: PortfolioSummary
+}
+
+export async function fetchPortfolioDetails(period?: string): Promise<PortfolioAllDetails> {
+  const { data } = await api.get<PortfolioAllDetails>("/portfolio/all-details", {
+    params: period ? { period } : undefined,
+  })
+  return data
+}
+
+export type NavHistoryPoint = { date: string; nav: number }
+
+export async function fetchNavHistory(fundId: string, period = "1Y"): Promise<NavHistoryPoint[]> {
+  const { data } = await api.get<{ navHistory: NavHistoryPoint[] }>(`/funds/${fundId}/nav-history`, {
+    params: { period },
+  })
+  return Array.isArray(data?.navHistory) ? data.navHistory : []
+}
+
+export async function investLumpsum(fundId: string, amount: number): Promise<Transaction> {
+  const { data } = await api.post<{ transaction: Transaction }>(`/funds/${fundId}/invest`, { amount })
+  return data.transaction
+}
+
+// ── SIPs ────────────────────────────────────────────────────────
+
 import type { SIP } from "@/types"
 
 export async function fetchSips(): Promise<SIP[]> {
@@ -59,11 +99,12 @@ export type SipResponse = {
     currentValue: number
     status: "ACTIVE" | "PAUSED"
     installments: Array<{
-      date: string
+      id: string
+      installmentDate: string
       amount: number
       nav: number
       units: number
-      status: "Success" | "Failed" | "Pending"
+      status: "COMPLETED" | "FAILED" | "PENDING"
     }>
   }
 }
@@ -71,4 +112,23 @@ export type SipResponse = {
 export async function createSip(payload: CreateSipPayload): Promise<SipResponse["sip"]> {
   const { data } = await api.post<SipResponse>("/sips", payload)
   return data.sip
+}
+
+export async function updateSip(payload: { sipId: string; status?: string; monthlyAmt?: number }): Promise<SIP> {
+  const { data } = await api.patch<{ sip: SIP }>("/sips", payload)
+  return data.sip
+}
+
+export async function deleteSip(sipId: string): Promise<SIP> {
+  const { data } = await api.delete<{ sip: SIP }>("/sips", { params: { id: sipId } })
+  return data.sip
+}
+
+// ── Transactions ────────────────────────────────────────────────
+
+import type { Transaction } from "@/types"
+
+export async function fetchTransactions(): Promise<Transaction[]> {
+  const { data } = await api.get<{ transactions: Transaction[] }>("/transactions")
+  return Array.isArray(data?.transactions) ? data.transactions : []
 }

@@ -45,7 +45,7 @@ export function FundSearchDialog({
 }) {
   const [query, setQuery] = useState("")
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ["funds", "search"],
     queryFn: () => fetchFunds(0, 100),
     enabled: open,
@@ -109,7 +109,14 @@ export function FundSearchDialog({
             </div>
           )}
 
-          {!isLoading && (
+          {!isLoading && isError && (
+            <div className="flex flex-col items-center gap-2 py-8">
+              <p className="text-sm text-destructive">Failed to load funds</p>
+              <p className="text-xs text-muted-foreground">Please try again later</p>
+            </div>
+          )}
+
+          {!isLoading && !isError && (
             <CommandEmpty>
               <div className="flex flex-col items-center gap-2 py-4">
                 <p className="text-sm text-muted-foreground">No funds found</p>

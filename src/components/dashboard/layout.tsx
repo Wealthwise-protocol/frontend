@@ -8,8 +8,6 @@ import { FundSearchDialog } from "@/components/explore/fund-search-dialog"
 import { fetchBookmarks, addBookmark, removeBookmark } from "@/services/funds"
 import { IconSearch, IconCommand } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
-import { usePortfolioStore } from "@/stores/portfolio-store"
-import { useTransactionStore } from "@/stores/transaction-store"
 import { toast } from "sonner"
 import type { Fund } from "@/data/funds"
 
@@ -19,8 +17,6 @@ function LayoutShell() {
   const location = useLocation()
   const queryClient = useQueryClient()
   const selectFundRef = useRef<((fund: Fund) => void) | null>(null)
-  const initPortfolio = usePortfolioStore((s) => s.init)
-  const initTransactions = useTransactionStore((s) => s.init)
   const [searchOpen, setSearchOpen] = useState(false)
 
   const { data: savedFundIds = [] } = useQuery({
@@ -51,11 +47,6 @@ function LayoutShell() {
       queryClient.invalidateQueries({ queryKey: ["bookmarks"] })
     },
   })
-
-  useEffect(() => {
-    initPortfolio()
-    initTransactions()
-  }, [initPortfolio, initTransactions])
 
   // Global Cmd+K / Ctrl+K shortcut
   useEffect(() => {
