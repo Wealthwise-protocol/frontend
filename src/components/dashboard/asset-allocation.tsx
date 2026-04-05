@@ -32,6 +32,11 @@ export function AssetAllocation() {
           <div className="mt-4 flex h-[180px] items-center justify-center">
             <p className="text-sm text-destructive">Failed to load.</p>
           </div>
+        ) : allocation.length === 0 ? (
+          <div className="mt-4 flex h-[180px] flex-col items-center justify-center gap-1">
+            <p className="text-sm font-medium text-muted-foreground">No holdings yet</p>
+            <p className="text-xs text-muted-foreground">Your allocation will appear here</p>
+          </div>
         ) : (
           <>
             <ChartContainer config={chartConfig} className="mx-auto mt-4 h-[180px] w-[180px]">

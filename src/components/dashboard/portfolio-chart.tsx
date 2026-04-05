@@ -56,6 +56,11 @@ export function PortfolioChart() {
           <div className="mt-6 flex h-64 items-center justify-center">
             <p className="text-sm text-destructive">Failed to load chart data.</p>
           </div>
+        ) : portfolioHistory.length === 0 ? (
+          <div className="mt-6 flex h-64 flex-col items-center justify-center gap-1">
+            <p className="text-sm font-medium text-muted-foreground">No portfolio history yet</p>
+            <p className="text-xs text-muted-foreground">Start investing to see your portfolio grow</p>
+          </div>
         ) : (
         <ChartContainer config={chartConfig} className="mt-6 h-64 w-full">
           <BarChart data={portfolioHistory} barCategoryGap="20%">

@@ -1,4 +1,6 @@
+import { Link } from "react-router-dom"
 import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import {
   Table,
   TableBody,
@@ -8,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { usePortfolio } from "@/hooks/use-portfolio"
-import { IconLoader2 } from "@tabler/icons-react"
+import { IconLoader2, IconPlus } from "@tabler/icons-react"
 
 function formatCurrency(n: number) {
   return `₹${n.toLocaleString("en-IN")}`
@@ -99,6 +101,21 @@ export function HoldingsTable() {
                   </TableCell>
                 </TableRow>
               ))}
+              {holdings.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={8} className="py-12 text-center">
+                    <p className="text-sm text-muted-foreground">
+                      No holdings yet. Start investing to build your portfolio.
+                    </p>
+                    <Button size="sm" className="mt-4" asChild>
+                      <Link to="/dashboard/explore">
+                        <IconPlus className="mr-1 size-3.5" />
+                        Explore Funds
+                      </Link>
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </div>

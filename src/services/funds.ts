@@ -107,3 +107,12 @@ export async function deleteSip(sipId: string): Promise<SIP> {
   const { data } = await api.delete<{ sip: SIP }>("/sips", { params: { id: sipId } })
   return data.sip
 }
+
+// ── Transactions ────────────────────────────────────────────────
+
+import type { Transaction } from "@/types"
+
+export async function fetchTransactions(): Promise<Transaction[]> {
+  const { data } = await api.get<{ transactions: Transaction[] }>("/transactions")
+  return Array.isArray(data?.transactions) ? data.transactions : []
+}

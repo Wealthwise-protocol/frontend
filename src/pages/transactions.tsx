@@ -1,4 +1,6 @@
 import { useState, useMemo } from "react"
+import { useQuery } from "@tanstack/react-query"
+import { fetchTransactions } from "@/services/funds"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -9,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { IconChevronDown, IconChevronUp } from "@tabler/icons-react"
+import { IconChevronDown, IconChevronUp, IconLoader2 } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
 import {
   FadeIn,
@@ -17,7 +19,6 @@ import {
   StaggerItem,
   CountUp,
 } from "@/components/ui/animated"
-import { useTransactionStore } from "@/stores/transaction-store"
 import type { Transaction, TransactionType, TransactionStatus } from "@/types"
 
 const typeFilters: ("All" | TransactionType)[] = ["All", "SIP", "Lumpsum", "Redeem"]
@@ -38,8 +39,16 @@ function formatCurrency(n: number) {
   return `₹${n.toLocaleString("en-IN")}`
 }
 
+function formatDate(dateStr: string) {
+  const d = new Date(dateStr)
+  return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+}
+
 export function TransactionsPage() {
-  const transactions = useTransactionStore((s) => s.transactions)
+  const { data: transactions = [], isLoading, isError } = useQuery({
+    queryKey: ["transactions"],
+    queryFn: fetchTransactions,
+  })
   const [activeType, setActiveType] = useState<"All" | TransactionType>("All")
   const [sortAsc, setSortAsc] = useState(false)
 
@@ -70,6 +79,21 @@ export function TransactionsPage() {
         <h1 className="text-2xl font-bold tracking-tight">Transactions</h1>
       </FadeIn>
 
+      {isLoading && (
+        <div className="mt-12 flex flex-col items-center gap-2">
+          <IconLoader2 className="size-6 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">Loading transactions...</p>
+        </div>
+      )}
+
+      {isError && (
+        <div className="mt-12 text-center">
+          <p className="text-sm text-destructive">Failed to load transactions. Please try again later.</p>
+        </div>
+      )}
+
+      {!isLoading && !isError && (
+      <>
       {/* Stat cards */}
       <StaggerContainer className="mt-6 grid gap-4 sm:grid-cols-3">
         <StaggerItem>
@@ -203,6 +227,8 @@ export function TransactionsPage() {
           </CardContent>
         </Card>
       </FadeIn>
+      </>
+      )}
     </>
   )
 }
@@ -212,7 +238,7 @@ function TransactionRow({ tx }: { tx: Transaction }) {
     <>
       {/* Desktop row */}
       <TableRow className="hidden md:table-row">
-        <TableCell className="text-xs">{tx.date}</TableCell>
+        <TableCell className="text-xs">{formatDate(tx.date)}</TableCell>
         <TableCell className="text-xs font-medium">{tx.fundName}</TableCell>
         <TableCell>
           <Badge
@@ -248,7 +274,7 @@ function TransactionRow({ tx }: { tx: Transaction }) {
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-semibold">{tx.fundName}</p>
                 <p className="mt-1 text-[0.6rem] text-muted-foreground">
-                  {tx.date}
+                  {formatDate(tx.date)}
                 </p>
               </div>
               <div className="flex items-center gap-2">

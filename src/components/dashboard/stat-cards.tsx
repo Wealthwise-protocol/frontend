@@ -1,6 +1,9 @@
+import { Link } from "react-router-dom"
 import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { StaggerContainer, StaggerItem, CountUp } from "@/components/ui/animated"
 import { usePortfolio } from "@/hooks/use-portfolio"
+import { IconPlus } from "@tabler/icons-react"
 
 export function StatCards() {
   const { data, isLoading, isError } = usePortfolio()
@@ -30,6 +33,24 @@ export function StatCards() {
   }
 
   const { summary } = data
+
+  if (summary.totalInvested === 0 && summary.currentValue === 0) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center gap-2 py-10">
+          <p className="text-sm font-medium text-muted-foreground">No investments yet</p>
+          <p className="text-xs text-muted-foreground">Start investing to see your portfolio summary</p>
+          <Button size="sm" className="mt-2" asChild>
+            <Link to="/dashboard/explore">
+              <IconPlus className="mr-1 size-3.5" />
+              Explore Funds
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
+    )
+  }
+
   const totalReturns = summary.totalGain
 
   const stats = [

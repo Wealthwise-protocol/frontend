@@ -3,14 +3,8 @@ import { PortfolioChart } from "@/components/dashboard/portfolio-chart"
 import { AssetAllocation } from "@/components/dashboard/asset-allocation"
 import { HoldingsTable } from "@/components/dashboard/holdings-table"
 import { FadeIn } from "@/components/ui/animated"
-import { useAuthStore } from "@/stores/auth-store"
 
 export function DashboardPage() {
-  const user = useAuthStore((s) => s.user)
-  const token = useAuthStore((s) => s.token)
-
-  console.log("user", user)
-  console.log("token", token)
   return (
     <>
       <FadeIn>
