@@ -21,10 +21,10 @@ function formatDateLabel(dateStr: string): string {
   return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" })
 }
 
-export function usePortfolio() {
+export function usePortfolio(period?: string) {
   const query = useQuery({
-    queryKey: ["portfolio"],
-    queryFn: fetchPortfolioDetails,
+    queryKey: ["portfolio", period],
+    queryFn: () => fetchPortfolioDetails(period),
   })
 
   const data = useMemo<TransformedPortfolio | null>(() => {

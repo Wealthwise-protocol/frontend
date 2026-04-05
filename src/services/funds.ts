@@ -52,9 +52,25 @@ export type PortfolioAllDetails = {
   summary: PortfolioSummary
 }
 
-export async function fetchPortfolioDetails(): Promise<PortfolioAllDetails> {
-  const { data } = await api.get<PortfolioAllDetails>("/portfolio/all-details")
+export async function fetchPortfolioDetails(period?: string): Promise<PortfolioAllDetails> {
+  const { data } = await api.get<PortfolioAllDetails>("/portfolio/all-details", {
+    params: period ? { period } : undefined,
+  })
   return data
+}
+
+export type NavHistoryPoint = { date: string; nav: number }
+
+export async function fetchNavHistory(fundId: string, period = "1Y"): Promise<NavHistoryPoint[]> {
+  const { data } = await api.get<{ navHistory: NavHistoryPoint[] }>(`/funds/${fundId}/nav-history`, {
+    params: { period },
+  })
+  return Array.isArray(data?.navHistory) ? data.navHistory : []
+}
+
+export async function investLumpsum(fundId: string, amount: number): Promise<Transaction> {
+  const { data } = await api.post<{ transaction: Transaction }>(`/funds/${fundId}/invest`, { amount })
+  return data.transaction
 }
 
 // ── SIPs ────────────────────────────────────────────────────────

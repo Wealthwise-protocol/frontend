@@ -1,8 +1,9 @@
 import { useState } from "react"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import type { Fund } from "@/data/funds"
-import { createSip } from "@/services/funds"
+import { createSip, investLumpsum, fetchNavHistory } from "@/services/funds"
 import { toast } from "sonner"
+import { IconLoader2 } from "@tabler/icons-react"
 import {
   Sheet,
   SheetContent,
@@ -31,31 +32,10 @@ const navChartConfig = {
   nav: { label: "NAV", color: "var(--color-primary)" },
 } satisfies ChartConfig
 
-function generateNavHistory() {
-  const data = []
-  let value = 60
-  for (let i = 0; i < 12; i++) {
-    const months = [
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-      "Jan",
-      "Feb",
-      "Mar",
-    ]
-    value += Math.random() * 3 - 0.5
-    data.push({ month: months[i], nav: Math.round(value * 100) / 100 })
-  }
-  return data
+function formatNavDate(dateStr: string): string {
+  const d = new Date(dateStr)
+  return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" })
 }
-
-const navHistory = generateNavHistory()
 
 const riskColors: Record<string, string> = {
   LOW: "border-emerald-500/30 text-emerald-500",
@@ -83,11 +63,27 @@ export function FundDetail({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const queryClient = useQueryClient()
 
+  const { data: navHistoryRaw, isLoading: navLoading } = useQuery({
+    queryKey: ["nav-history", fund?.id, activePeriod],
+    queryFn: () => fetchNavHistory(fund!.id, activePeriod),
+    enabled: open && !!fund,
+  })
+
+  const navHistory = (navHistoryRaw ?? []).map((p) => ({
+    month: formatNavDate(p.date),
+    nav: p.nav,
+  }))
+
   const sipMutation = useMutation({
     mutationFn: createSip,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sips"] })
     },
+  })
+
+  const lumpsumMutation = useMutation({
+    mutationFn: ({ fundId, amount }: { fundId: string; amount: number }) =>
+      investLumpsum(fundId, amount),
   })
 
   const handleClose = () => {
@@ -114,6 +110,11 @@ export function FundDetail({
           fundId: fund.id,
           monthlyAmt: numAmount,
         })
+      } else {
+        await lumpsumMutation.mutateAsync({
+          fundId: fund.id,
+          amount: numAmount,
+        })
       }
 
       queryClient.invalidateQueries({ queryKey: ["portfolio"] })
@@ -121,8 +122,9 @@ export function FundDetail({
 
       toast.success(investTab === "sip" ? "SIP created successfully!" : "Investment successful!")
       setStep("success")
-    } catch {
-      toast.error("Failed to create SIP. Please try again.")
+    } catch (err) {
+      const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+      toast.error(message || (investTab === "sip" ? "Failed to create SIP. Please try again." : "Failed to invest. Please try again."))
     } finally {
       setIsSubmitting(false)
     }
@@ -209,6 +211,15 @@ export function FundDetail({
                 </span>
               </div>
 
+              {navLoading ? (
+                <div className="mt-4 flex h-40 items-center justify-center">
+                  <IconLoader2 className="size-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : navHistory.length === 0 ? (
+                <div className="mt-4 flex h-40 items-center justify-center">
+                  <p className="text-xs text-muted-foreground">No NAV data available</p>
+                </div>
+              ) : (
               <ChartContainer
                 config={navChartConfig}
                 className="mt-4 h-40 w-full"
@@ -252,6 +263,7 @@ export function FundDetail({
                   />
                 </AreaChart>
               </ChartContainer>
+              )}
 
               <div className="mt-3 flex items-center gap-1">
                 {periods.map((p) => (

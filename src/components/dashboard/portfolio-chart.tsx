@@ -21,8 +21,8 @@ const chartConfig = {
 } satisfies ChartConfig
 
 export function PortfolioChart() {
-  const [activePeriod, setActivePeriod] = useState<string>("1Y")
-  const { data, isLoading, isError } = usePortfolio()
+  const [activePeriod, setActivePeriod] = useState<string>("ALL")
+  const { data, isLoading, isError } = usePortfolio(activePeriod)
   const portfolioHistory = data?.portfolioHistory ?? []
 
   return (
