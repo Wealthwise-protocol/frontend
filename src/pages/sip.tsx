@@ -1,8 +1,8 @@
 import { useState, useMemo } from "react"
 import { Link } from "react-router-dom"
 import { toast } from "sonner"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchSips } from "@/services/funds"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { fetchSips, updateSip, deleteSip } from "@/services/funds"
 import type { SIP } from "@/types"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -61,6 +61,20 @@ function formatCurrency(n: number) {
   return `₹${n.toLocaleString("en-IN")}`
 }
 
+function formatDate(dateStr: string) {
+  const d = new Date(dateStr)
+  return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+}
+
+function formatStatus(status: string) {
+  switch (status) {
+    case "COMPLETED": return "Success"
+    case "FAILED": return "Failed"
+    case "PENDING": return "Pending"
+    default: return status
+  }
+}
+
 function SIPRow({
   sip,
   onTogglePause,
@@ -86,8 +100,8 @@ function SIPRow({
         <TableCell className="text-right text-xs">
           {formatCurrency(sip.monthlyAmt)}
         </TableCell>
-        <TableCell className="text-xs">{sip.startDate}</TableCell>
-        <TableCell className="text-xs">{sip.nextDebit}</TableCell>
+        <TableCell className="text-xs">{formatDate(sip.startDate)}</TableCell>
+        <TableCell className="text-xs">{sip.nextDebit === "--" ? "--" : formatDate(sip.nextDebit)}</TableCell>
         <TableCell className="text-right text-xs">
           {formatCurrency(sip.totalInvested)}
         </TableCell>
@@ -205,11 +219,11 @@ function SIPRow({
               </div>
               <div>
                 <span className="text-muted-foreground">Started</span>
-                <p className="text-xs">{sip.startDate}</p>
+                <p className="text-xs">{formatDate(sip.startDate)}</p>
               </div>
               <div className="text-right">
                 <span className="text-muted-foreground">Next Debit</span>
-                <p className="text-xs">{sip.nextDebit}</p>
+                <p className="text-xs">{sip.nextDebit === "--" ? "--" : formatDate(sip.nextDebit)}</p>
               </div>
             </div>
 
@@ -261,8 +275,8 @@ function SIPRow({
                   </thead>
                   <tbody>
                     {sip.installments.map((inst) => (
-                      <tr key={inst.date}>
-                        <td className="py-2 text-xs">{inst.date}</td>
+                      <tr key={inst.id}>
+                        <td className="py-2 text-xs">{formatDate(inst.installmentDate)}</td>
                         <td className="py-2 text-right text-xs">
                           {formatCurrency(inst.amount)}
                         </td>
@@ -272,8 +286,8 @@ function SIPRow({
                         <td className="py-2 text-right text-xs">
                           {(inst.units ?? 0).toFixed(3)}
                         </td>
-                        <td className="py-2 text-right text-xs font-medium text-emerald-500">
-                          {inst.status}
+                        <td className={`py-2 text-right text-xs font-medium ${inst.status === "FAILED" ? "text-red-500" : inst.status === "PENDING" ? "text-orange-500" : "text-emerald-500"}`}>
+                          {formatStatus(inst.status)}
                         </td>
                       </tr>
                     ))}
@@ -285,13 +299,13 @@ function SIPRow({
               <div className="mt-3 flex flex-col gap-3 md:hidden">
                 {sip.installments.map((inst) => (
                   <div
-                    key={inst.date}
+                    key={inst.id}
                     className="rounded-md border border-border p-3"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium">{inst.date}</span>
-                      <span className="text-xs font-medium text-emerald-500">
-                        {inst.status}
+                      <span className="text-xs font-medium">{formatDate(inst.installmentDate)}</span>
+                      <span className={`text-xs font-medium ${inst.status === "FAILED" ? "text-red-500" : inst.status === "PENDING" ? "text-orange-500" : "text-emerald-500"}`}>
+                        {formatStatus(inst.status)}
                       </span>
                     </div>
                     <div className="mt-2 grid grid-cols-3 gap-2 text-[0.6rem]">
@@ -350,6 +364,83 @@ export function SipPage() {
   const totalMonthly = activeSips.reduce((sum, s) => sum + s.monthlyAmt, 0)
   const totalInvested = sipList.reduce((sum, s) => sum + s.totalInvested, 0)
 
+  const togglePauseMutation = useMutation({
+    mutationFn: (sip: SIP) => {
+      const newStatus = sip.status === "ACTIVE" ? "PAUSED" : "ACTIVE"
+      return updateSip({ sipId: sip.id, status: newStatus })
+    },
+    onMutate: async (sip) => {
+      await queryClient.cancelQueries({ queryKey: ["sips"] })
+      const previous = queryClient.getQueryData<SIP[]>(["sips"])
+      queryClient.setQueryData<SIP[]>(["sips"], (old = []) =>
+        old.map((s) => {
+          if (s.id !== sip.id) return s
+          const newStatus = s.status === "ACTIVE" ? "PAUSED" : "ACTIVE"
+          return { ...s, status: newStatus as "ACTIVE" | "PAUSED" }
+        }),
+      )
+      return { previous }
+    },
+    onError: (err, _sip, context) => {
+      queryClient.setQueryData(["sips"], context?.previous)
+      const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+      toast.error(message || "Failed to update SIP status")
+    },
+    onSuccess: (_data, sip) => {
+      toast.success(sip.status === "ACTIVE" ? "SIP paused" : "SIP resumed")
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["sips"] })
+    },
+  })
+
+  const editMutation = useMutation({
+    mutationFn: ({ sipId, monthlyAmt }: { sipId: string; monthlyAmt: number }) =>
+      updateSip({ sipId, monthlyAmt }),
+    onMutate: async ({ sipId, monthlyAmt }) => {
+      await queryClient.cancelQueries({ queryKey: ["sips"] })
+      const previous = queryClient.getQueryData<SIP[]>(["sips"])
+      queryClient.setQueryData<SIP[]>(["sips"], (old = []) =>
+        old.map((s) => (s.id === sipId ? { ...s, monthlyAmt } : s)),
+      )
+      return { previous }
+    },
+    onError: (err, _vars, context) => {
+      queryClient.setQueryData(["sips"], context?.previous)
+      const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+      toast.error(message || "Failed to update SIP amount")
+    },
+    onSuccess: () => {
+      toast.success("SIP amount updated")
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["sips"] })
+    },
+  })
+
+  const cancelMutation = useMutation({
+    mutationFn: (sipId: string) => deleteSip(sipId),
+    onMutate: async (sipId) => {
+      await queryClient.cancelQueries({ queryKey: ["sips"] })
+      const previous = queryClient.getQueryData<SIP[]>(["sips"])
+      queryClient.setQueryData<SIP[]>(["sips"], (old = []) =>
+        old.filter((s) => s.id !== sipId),
+      )
+      return { previous }
+    },
+    onError: (err, _sipId, context) => {
+      queryClient.setQueryData(["sips"], context?.previous)
+      const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+      toast.error(message || "Failed to cancel SIP")
+    },
+    onSuccess: () => {
+      toast.success("SIP cancelled")
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["sips"] })
+    },
+  })
+
   function handleTogglePause(id: string) {
     const sip = sipList.find((s) => s.id === id)
     if (sip) setPauseTarget(sip)
@@ -357,15 +448,7 @@ export function SipPage() {
 
   function confirmTogglePause() {
     if (!pauseTarget) return
-    // Optimistic update on local cache
-    queryClient.setQueryData<SIP[]>(["sips"], (old = []) =>
-      old.map((s) => {
-        if (s.id !== pauseTarget.id) return s
-        const newStatus = s.status === "ACTIVE" ? "PAUSED" : "ACTIVE"
-        return { ...s, status: newStatus as "ACTIVE" | "PAUSED" }
-      }),
-    )
-    toast.success(pauseTarget.status === "ACTIVE" ? "SIP paused" : "SIP resumed")
+    togglePauseMutation.mutate(pauseTarget)
     setPauseTarget(null)
   }
 
@@ -379,11 +462,7 @@ export function SipPage() {
     if (!editTarget) return
     const newAmt = parseInt(editAmount, 10)
     if (isNaN(newAmt) || newAmt < 100) return
-    // Optimistic update on local cache
-    queryClient.setQueryData<SIP[]>(["sips"], (old = []) =>
-      old.map((s) => (s.id === editTarget.id ? { ...s, monthlyAmt: newAmt } : s)),
-    )
-    toast.success("SIP amount updated")
+    editMutation.mutate({ sipId: editTarget.id, monthlyAmt: newAmt })
     setEditSaved(true)
     setTimeout(() => {
       setEditTarget(null)
@@ -397,11 +476,7 @@ export function SipPage() {
 
   function confirmCancel() {
     if (!cancelTargetId) return
-    // Optimistic update on local cache
-    queryClient.setQueryData<SIP[]>(["sips"], (old = []) =>
-      old.filter((s) => s.id !== cancelTargetId),
-    )
-    toast.success("SIP cancelled")
+    cancelMutation.mutate(cancelTargetId)
     setCancelTargetId(null)
   }
 

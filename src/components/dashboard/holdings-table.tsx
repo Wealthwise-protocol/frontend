@@ -7,14 +7,32 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { usePortfolioStore } from "@/stores/portfolio-store"
+import { usePortfolio } from "@/hooks/use-portfolio"
+import { IconLoader2 } from "@tabler/icons-react"
 
 function formatCurrency(n: number) {
   return `₹${n.toLocaleString("en-IN")}`
 }
 
 export function HoldingsTable() {
-  const holdings = usePortfolioStore((s) => s.holdings)
+  const { data, isLoading, isError } = usePortfolio()
+  const holdings = data?.holdings ?? []
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <IconLoader2 className="size-6 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <p className="text-sm text-destructive">Failed to load holdings.</p>
+      </div>
+    )
+  }
 
   return (
     <Card>

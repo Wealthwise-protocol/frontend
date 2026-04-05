@@ -3,7 +3,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import type { Fund } from "@/data/funds"
 import { createSip } from "@/services/funds"
 import { useTransactionStore } from "@/stores/transaction-store"
-import { usePortfolioStore } from "@/stores/portfolio-store"
 import { toast } from "sonner"
 import {
   Sheet,
@@ -77,7 +76,6 @@ export function FundDetail({
 }) {
   const isDesktop = useMediaQuery("(min-width: 768px)")
   const addTransaction = useTransactionStore((s) => s.addTransaction)
-  const addHolding = usePortfolioStore((s) => s.addHolding)
   const [investTab, setInvestTab] = useState("sip")
   const [amount, setAmount] = useState("")
   const [activePeriod, setActivePeriod] = useState("1Y")
@@ -133,16 +131,7 @@ export function FundDetail({
         status: "Success",
       })
 
-      addHolding({
-        name: fund.name,
-        category: fund.category,
-        units,
-        avgNav: fund.nav,
-        curNav: fund.nav,
-        invested: numAmount,
-        curValue: numAmount,
-        gain: 0,
-      })
+      queryClient.invalidateQueries({ queryKey: ["portfolio"] })
 
       toast.success(investTab === "sip" ? "SIP created successfully!" : "Investment successful!")
       setStep("success")

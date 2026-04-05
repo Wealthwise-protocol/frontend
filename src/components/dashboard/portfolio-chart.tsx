@@ -8,7 +8,8 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 import { cn } from "@/lib/utils"
-import { usePortfolioStore } from "@/stores/portfolio-store"
+import { usePortfolio } from "@/hooks/use-portfolio"
+import { IconLoader2 } from "@tabler/icons-react"
 
 const periods = ["1M", "3M", "6M", "1Y", "ALL"] as const
 
@@ -21,7 +22,8 @@ const chartConfig = {
 
 export function PortfolioChart() {
   const [activePeriod, setActivePeriod] = useState<string>("1Y")
-  const portfolioHistory = usePortfolioStore((s) => s.portfolioHistory)
+  const { data, isLoading, isError } = usePortfolio()
+  const portfolioHistory = data?.portfolioHistory ?? []
 
   return (
     <Card className="flex-1">
@@ -46,6 +48,15 @@ export function PortfolioChart() {
           </div>
         </div>
 
+        {isLoading ? (
+          <div className="mt-6 flex h-64 items-center justify-center">
+            <IconLoader2 className="size-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : isError ? (
+          <div className="mt-6 flex h-64 items-center justify-center">
+            <p className="text-sm text-destructive">Failed to load chart data.</p>
+          </div>
+        ) : (
         <ChartContainer config={chartConfig} className="mt-6 h-64 w-full">
           <BarChart data={portfolioHistory} barCategoryGap="20%">
             <CartesianGrid
@@ -80,6 +91,7 @@ export function PortfolioChart() {
             />
           </BarChart>
         </ChartContainer>
+        )}
       </CardContent>
     </Card>
   )
