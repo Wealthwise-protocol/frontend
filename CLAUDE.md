@@ -23,21 +23,21 @@ npm run preview      # Preview production build
 - React 19, TypeScript, Vite 7
 - Tailwind CSS v4 with OKLch color system
 - shadcn/ui components (Radix UI primitives, style: `radix-mira`, base color: `stone`)
-- Zustand for client state (persisted to localStorage)
-- TanStack React Query for server state
+- Zustand for client state (auth only, persisted to localStorage)
+- TanStack React Query for all server state
 - Axios for HTTP (JWT auth via cookie `ww-token`)
 - React Router v7
 
 ### Directory Layout
 - `src/pages/` — Route-level page components
 - `src/components/dashboard/` — Dashboard-specific components (sidebar, charts, tables)
-- `src/components/explore/` — Fund card, fund detail drawer
+- `src/components/explore/` — Fund card, fund detail drawer, fund search dialog
 - `src/components/landing/` — Landing page sections
 - `src/components/ui/` — shadcn/ui primitives (do NOT edit manually — use `npx shadcn@latest add <component>`)
 - `src/services/` — API call functions (api.ts has axios instance, auth.ts, funds.ts)
-- `src/stores/` — Zustand stores (auth, portfolio, sip, transaction, explore)
-- `src/hooks/` — Custom hooks (use-auth.ts, use-media-query.ts)
-- `src/data/` — Static/mock data (funds.ts has Fund type + fallback data, mock.ts has mock portfolio data)
+- `src/stores/` — Zustand stores (auth-store.ts only — all other stores have been removed)
+- `src/hooks/` — Custom hooks (use-auth.ts, use-media-query.ts, use-portfolio.ts)
+- `src/data/` — Static data (funds.ts has Fund type + hardcoded fund array for landing page)
 - `src/types/` — Shared TypeScript types
 - `src/lib/utils.ts` — `cn()` helper (clsx + tailwind-merge)
 
@@ -57,21 +57,25 @@ Local: `http://localhost:9095`
 
 ### Endpoints
 - Auth: `/auth/signin`, `/auth/signup`, `/auth/signout`, `/auth/forgot-password`, `/auth/reset-password`, `/auth/change-password`, `/auth/profile`, `/auth/account`
-- Funds: `GET /funds`
+- Funds: `GET /funds`, `POST /funds/:fundId/invest`, `GET /funds/:fundId/nav-history?period=`
 - Bookmarks: `GET /bookmarks`, `POST /bookmarks/:fundId`, `DELETE /bookmarks/:fundId`
+- Portfolio: `GET /portfolio/all-details?period=`
+- SIPs: `GET /sips`, `POST /sips`, `PATCH /sips`, `DELETE /sips?id=`
+- Transactions: `GET /transactions`
 
 ## State Management
 
-### Zustand Stores (localStorage keys)
-- `ww-auth` — User session (user object, token, isAuthenticated)
-- `ww-portfolio` — Holdings, portfolio history, asset allocation
-- `ww-sips` — SIP list with installment history
-- `ww-transactions` — Transaction list
-- `ww-explore` — Saved fund IDs (legacy, being replaced by API bookmarks)
+### Zustand Store
+- `ww-auth` — User session (user object, token, isAuthenticated). This is the only Zustand store.
 
 ### React Query Keys
-- `["funds"]` — Fund list from `/funds`
+- `["funds"]` — Paginated fund list from `/funds`
+- `["funds", "search"]` — Full fund list for search dialog
 - `["bookmarks"]` — Bookmarked fund IDs from `/bookmarks`
+- `["portfolio", period?]` — Portfolio overview (holdings, history, allocation, summary) from `/portfolio/all-details`
+- `["sips"]` — SIP list from `/sips`
+- `["transactions"]` — Transaction list from `/transactions`
+- `["nav-history", fundId, period]` — NAV history for a specific fund
 
 ## Auth Flow
 
@@ -107,16 +111,17 @@ Protected (wrapped in `AuthGuard`): `/dashboard`, `/dashboard/explore`, `/dashbo
 ## Key Conventions
 
 - Fund type is defined in `src/data/funds.ts`, NOT in `src/types/index.ts`
-- All other shared types (User, SIP, Transaction, Holding, etc.) are in `src/types/index.ts`
+- All other shared types (User, SIP, Transaction, Holding, Installment) are in `src/types/index.ts`
 - Adding UI components: `npx shadcn@latest add <name>` — places them in `src/components/ui/`
 - Icons: use `@tabler/icons-react` (e.g., `IconSearch`, `IconBookmark`)
 - Toast notifications: use `toast` from `sonner`
 - Responsive: mobile-first, sidebar collapses on mobile, bottom nav shown instead
 - Use `useMediaQuery("(min-width: 768px)")` for responsive logic in components
+- All API data flows through React Query — do not use Zustand for server state
+- Backend error messages are surfaced in toasts via `err.response.data.message`
 
 ## Things to Watch Out For
 
-- The `explore-store.ts` is legacy — bookmarks now use React Query + API. The store file still exists but is unused.
-- Portfolio, SIP, and transaction stores still use mock data from `src/data/mock.ts` — these will be migrated to API calls in the future.
-- The `src/data/funds.ts` exports both the `Fund` type and a hardcoded `funds` array. The explore page now fetches from the API, but the hardcoded array is still used by `src/components/landing/fund-preview.tsx`.
-- NAV history chart in fund-detail.tsx uses procedurally generated data, not real data.
+- The `src/data/funds.ts` exports both the `Fund` type and a hardcoded `funds` array. The explore page fetches from the API, but the hardcoded array is still used by `src/components/landing/fund-preview.tsx`.
+- Portfolio chart period filter passes `period` param to `/portfolio/all-details` — the backend filters the `portfolioHistory` array server-side.
+- The `usePortfolio(period?)` hook is shared by all dashboard components. Stat cards, asset allocation, and holdings table call it without a period (defaults to no filter). The portfolio chart passes the active period. React Query deduplicates calls with the same key.

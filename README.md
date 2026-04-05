@@ -10,7 +10,7 @@ A modern mutual fund investment platform built with React, TypeScript, and Tailw
 | Build | Vite 7 |
 | Styling | Tailwind CSS v4 (OKLch color space) |
 | UI Components | shadcn/ui + Radix UI |
-| State Management | Zustand (persisted to localStorage) |
+| Client State | Zustand (auth only) |
 | Server State | TanStack React Query |
 | HTTP Client | Axios (JWT interceptors) |
 | Routing | React Router v7 |
@@ -78,7 +78,7 @@ npm run build
 src/
 ├── components/
 │   ├── dashboard/       # Sidebar, stats, charts, holdings table
-│   ├── explore/         # Fund cards, fund detail drawer
+│   ├── explore/         # Fund cards, fund detail drawer, search dialog
 │   ├── landing/         # Navbar, hero, steps, CTA, footer
 │   ├── ui/              # shadcn/ui primitives (40+ components)
 │   ├── auth-guard.tsx   # Route protection
@@ -99,19 +99,15 @@ src/
 ├── services/
 │   ├── api.ts           # Axios instance + interceptors
 │   ├── auth.ts          # Auth API calls
-│   └── funds.ts         # Funds + bookmarks API calls
+│   └── funds.ts         # Funds, portfolio, SIPs, transactions API calls
 ├── stores/
-│   ├── auth-store.ts    # User session
-│   ├── portfolio-store.ts
-│   ├── sip-store.ts
-│   ├── transaction-store.ts
-│   └── explore-store.ts
+│   └── auth-store.ts    # User session (only remaining store)
 ├── hooks/
 │   ├── use-auth.ts      # Auth mutations (sign in/up/out)
-│   └── use-media-query.ts
+│   ├── use-media-query.ts
+│   └── use-portfolio.ts # Portfolio data via React Query
 ├── data/
-│   ├── funds.ts         # Fund type + fallback data
-│   └── mock.ts          # Mock portfolio/SIP/transaction data
+│   └── funds.ts         # Fund type + static data for landing page
 ├── types/
 │   └── index.ts         # Shared TypeScript types
 ├── lib/
@@ -145,18 +141,20 @@ src/
 
 ## Features
 
-- **Fund Explorer** — Browse, search, and filter mutual funds by category (Equity, Debt, Hybrid, ELSS, Index). View detailed fund info, NAV history charts, and returns comparison.
+- **Fund Explorer** — Browse, search (Cmd+K), and filter mutual funds by category (Equity, Debt, Hybrid, ELSS, Index). View detailed fund info, real NAV history charts with period filtering, and returns comparison.
+- **Lumpsum & SIP Investing** — Invest via one-time lumpsum or set up monthly SIPs directly from the fund detail drawer.
 - **Bookmarks** — Save/unsave funds with optimistic UI updates backed by the API.
-- **SIP Management** — Create, pause, resume, edit, and cancel Systematic Investment Plans.
-- **Portfolio Dashboard** — Track holdings, portfolio value over time (bar chart), and asset allocation (donut chart).
-- **Transaction History** — View and filter past investment transactions.
+- **SIP Management** — Create, pause, resume, edit amount, and cancel SIPs. All mutations persist to the backend with optimistic updates and rollback on failure.
+- **Portfolio Dashboard** — Track holdings, portfolio value over time (bar chart with 1M/3M/6M/1Y/ALL period filter), and asset allocation (donut chart). All data from real API.
+- **Transaction History** — View and filter past SIP and lumpsum transactions by type.
 - **Authentication** — JWT-based auth with auto sign-out on 401, password reset flow, and protected routes.
 - **Dark Mode** — System-aware theme toggle (press `d` to switch).
 - **Responsive** — Mobile-first with collapsible sidebar and bottom navigation.
+- **Loading & Empty States** — Skeleton loaders, spinners, and friendly empty states with CTAs across all pages.
 
 ## API Integration
 
-The frontend connects to the WealthWise backend at the URL specified by `VITE_API_BASE_URL`.
+The frontend connects to the WealthWise Spring Boot backend at the URL specified by `VITE_API_BASE_URL`.
 
 ### Endpoints Used
 
@@ -170,10 +168,18 @@ The frontend connects to the WealthWise backend at the URL specified by `VITE_AP
 | POST | `/auth/change-password` | Change password |
 | PATCH | `/auth/profile` | Update profile |
 | DELETE | `/auth/account` | Delete account |
-| GET | `/funds` | List all funds |
+| GET | `/funds?page=&size=` | List funds (paginated) |
+| POST | `/funds/:fundId/invest` | Lumpsum investment |
+| GET | `/funds/:fundId/nav-history?period=` | Fund NAV history |
 | GET | `/bookmarks` | Get saved fund IDs |
 | POST | `/bookmarks/:fundId` | Bookmark a fund |
 | DELETE | `/bookmarks/:fundId` | Remove bookmark |
+| GET | `/portfolio/all-details?period=` | Portfolio overview (holdings, history, allocation, summary) |
+| GET | `/sips` | List user's SIPs |
+| POST | `/sips` | Create a new SIP |
+| PATCH | `/sips` | Update SIP (pause/resume/edit amount) |
+| DELETE | `/sips?id=` | Cancel a SIP |
+| GET | `/transactions` | List user's transactions |
 
 ## License
 
