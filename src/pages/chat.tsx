@@ -1,0 +1,286 @@
+import { useState, useRef, useEffect, useCallback } from "react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import Markdown from "react-markdown"
+import {
+  IconRobot,
+  IconSend,
+  IconTrash,
+  IconSparkles,
+  IconLoader2,
+} from "@tabler/icons-react"
+import { toast } from "sonner"
+import { Button } from "@/components/ui/button"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import { FadeIn } from "@/components/ui/animated"
+import { cn } from "@/lib/utils"
+import {
+  fetchChatHistory,
+  sendChatMessage,
+  clearChatHistory,
+  type ChatMessage,
+} from "@/services/chat"
+
+const SUGGESTED_PROMPTS = [
+  "What should I invest in?",
+  "Analyze my portfolio",
+  "Suggest a SIP plan for \u20B910,000/month",
+  "Compare my funds",
+]
+
+export function ChatPage() {
+  const queryClient = useQueryClient()
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const [input, setInput] = useState("")
+
+  // Local messages state for optimistic UI
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+
+  const { isLoading: isLoadingHistory } = useQuery({
+    queryKey: ["chat-history"],
+    queryFn: fetchChatHistory,
+    onSuccess: (data: ChatMessage[]) => setMessages(data),
+  } as Parameters<typeof useQuery>[0])
+
+  const { mutate: send, isPending: isSending } = useMutation({
+    mutationFn: sendChatMessage,
+    onMutate: (message: string) => {
+      setMessages((prev) => [...prev, { role: "user", content: message }])
+      setInput("")
+    },
+    onSuccess: (response: string) => {
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: response },
+      ])
+    },
+    onError: (err: unknown) => {
+      // Remove the optimistic user message
+      setMessages((prev) => prev.slice(0, -1))
+      const message =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message || "AI service unavailable, please try again"
+      toast.error(message)
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["chat-history"] })
+    },
+  })
+
+  const { mutate: clearChat } = useMutation({
+    mutationFn: clearChatHistory,
+    onSuccess: () => {
+      setMessages([])
+      queryClient.invalidateQueries({ queryKey: ["chat-history"] })
+      toast.success("Chat cleared")
+    },
+    onError: () => {
+      toast.error("Failed to clear chat")
+    },
+  })
+
+  // Auto-scroll to bottom
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages, isSending])
+
+  const handleSend = useCallback(() => {
+    const trimmed = input.trim()
+    if (!trimmed || isSending) return
+    send(trimmed)
+  }, [input, isSending, send])
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      handleSend()
+    }
+  }
+
+  const handleSuggestion = (prompt: string) => {
+    if (isSending) return
+    send(prompt)
+  }
+
+  const showWelcome = messages.length === 0 && !isLoadingHistory
+
+  return (
+    <FadeIn className="flex h-[calc(100svh-3.5rem-2rem)] flex-col md:h-[calc(100svh-3.5rem-3rem)]">
+      {/* Header */}
+      <div className="flex items-center justify-between pb-3">
+        <div className="flex items-center gap-2">
+          <div className="flex size-7 items-center justify-center rounded-md bg-primary/10">
+            <IconSparkles className="size-4 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-sm font-bold tracking-tight">
+              X — Your Financial Co-Pilot
+            </h1>
+          </div>
+        </div>
+        {messages.length > 0 && (
+          <AlertDialog>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label="Clear chat"
+                  >
+                    <IconTrash className="size-3.5 text-muted-foreground" />
+                  </Button>
+                </AlertDialogTrigger>
+              </TooltipTrigger>
+              <TooltipContent>Clear chat</TooltipContent>
+            </Tooltip>
+            <AlertDialogContent size="sm">
+              <AlertDialogHeader>
+                <AlertDialogTitle>Clear chat history?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete all messages in this conversation.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  variant="destructive"
+                  onClick={() => clearChat()}
+                >
+                  Clear
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
+      </div>
+
+      {/* Messages area */}
+      <div className="flex-1 overflow-y-auto rounded-lg border border-border bg-card p-3">
+        {isLoadingHistory ? (
+          <div className="flex h-full items-center justify-center">
+            <IconLoader2 className="size-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : showWelcome ? (
+          <div className="flex h-full flex-col items-center justify-center gap-6 px-4 text-center">
+            <div className="flex size-12 items-center justify-center rounded-full bg-primary/10">
+              <IconRobot className="size-6 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold">
+                Hi, I&apos;m X
+              </h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Your personal financial co-pilot. Ask me anything about your
+                investments.
+              </p>
+            </div>
+            <div className="grid w-full max-w-md grid-cols-1 gap-2 sm:grid-cols-2">
+              {SUGGESTED_PROMPTS.map((prompt) => (
+                <button
+                  key={prompt}
+                  type="button"
+                  onClick={() => handleSuggestion(prompt)}
+                  className="rounded-lg border border-border bg-muted/50 px-3 py-2.5 text-left text-xs text-foreground transition-colors hover:border-primary/40 hover:bg-muted"
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {messages.map((msg, i) => (
+              <div
+                key={i}
+                className={cn(
+                  "flex gap-2.5",
+                  msg.role === "user" ? "justify-end" : "justify-start",
+                )}
+              >
+                {msg.role === "assistant" && (
+                  <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                    <IconRobot className="size-3.5 text-primary" />
+                  </div>
+                )}
+                <div
+                  className={cn(
+                    "max-w-[85%] rounded-lg px-3 py-2 text-xs sm:max-w-[75%]",
+                    msg.role === "user"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-foreground",
+                  )}
+                >
+                  {msg.role === "assistant" ? (
+                    <div className="chat-markdown">
+                      <Markdown>{msg.content}</Markdown>
+                    </div>
+                  ) : (
+                    <p className="whitespace-pre-wrap">{msg.content}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {/* Typing indicator */}
+            {isSending && (
+              <div className="flex gap-2.5">
+                <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                  <IconRobot className="size-3.5 text-primary" />
+                </div>
+                <div className="rounded-lg bg-muted px-3 py-2">
+                  <div className="flex items-center gap-1">
+                    <span className="inline-block size-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:0ms]" />
+                    <span className="inline-block size-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:150ms]" />
+                    <span className="inline-block size-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:300ms]" />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div ref={messagesEndRef} />
+          </div>
+        )}
+      </div>
+
+      {/* Input bar */}
+      <div className="flex items-end gap-2 pt-3">
+        <textarea
+          ref={textareaRef}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Ask X anything about your finances..."
+          disabled={isSending}
+          rows={1}
+          className={cn(
+            "field-sizing-content max-h-32 min-h-8 flex-1 resize-none rounded-md border border-input bg-input/20 px-3 py-1.5 text-xs transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30",
+          )}
+        />
+        <Button
+          size="icon"
+          onClick={handleSend}
+          disabled={!input.trim() || isSending}
+          aria-label="Send message"
+        >
+          <IconSend className="size-3.5" />
+        </Button>
+      </div>
+    </FadeIn>
+  )
+}

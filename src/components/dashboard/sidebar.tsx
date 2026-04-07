@@ -9,6 +9,7 @@ import {
   IconSettingsAutomation,
   IconReceipt,
   IconUser,
+  IconMessageChatbot,
 } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -27,6 +28,7 @@ export const navItems = [
     href: "/dashboard/sip",
   },
   { label: "Transactions", icon: IconReceipt, href: "/dashboard/transactions" },
+  { label: "Ask X", icon: IconMessageChatbot, href: "/dashboard/chat" },
   { label: "Profile", icon: IconUser, href: "/dashboard/profile" },
 ]
 

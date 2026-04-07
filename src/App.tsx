@@ -43,6 +43,9 @@ const TransactionsPage = lazy(() =>
 const ProfilePage = lazy(() =>
   import("@/pages/profile").then((m) => ({ default: m.ProfilePage }))
 )
+const ChatPage = lazy(() =>
+  import("@/pages/chat").then((m) => ({ default: m.ChatPage }))
+)
 
 export function App() {
   return (
@@ -59,6 +62,7 @@ export function App() {
             <Route path="explore" element={<ExplorePage />} />
             <Route path="sip" element={<SipPage />} />
             <Route path="transactions" element={<TransactionsPage />} />
+            <Route path="chat" element={<ChatPage />} />
             <Route path="profile" element={<ProfilePage />} />
           </Route>
         </Route>
