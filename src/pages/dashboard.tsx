@@ -1,4 +1,5 @@
 import { StatCards } from "@/components/dashboard/stat-cards"
+import { InsightCard } from "@/components/dashboard/insight-card"
 import { PortfolioChart } from "@/components/dashboard/portfolio-chart"
 import { AssetAllocation } from "@/components/dashboard/asset-allocation"
 import { HoldingsTable } from "@/components/dashboard/holdings-table"
@@ -14,6 +15,10 @@ export function DashboardPage() {
       <div className="mt-6">
         <StatCards />
       </div>
+
+      <FadeIn delay={0.15} className="mt-6">
+        <InsightCard />
+      </FadeIn>
 
       <FadeIn delay={0.25} className="mt-6 flex flex-col gap-4 xl:flex-row">
         <PortfolioChart />

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useRef, useEffect, useCallback, useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import Markdown from "react-markdown"
 import {
@@ -48,30 +48,32 @@ export function ChatPage() {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [input, setInput] = useState("")
 
-  // Local messages state for optimistic UI
-  const [messages, setMessages] = useState<ChatMessage[]>([])
-
-  const { isLoading: isLoadingHistory } = useQuery({
+  const { data: messages = [], isLoading: isLoadingHistory } = useQuery({
     queryKey: ["chat-history"],
     queryFn: fetchChatHistory,
-    onSuccess: (data: ChatMessage[]) => setMessages(data),
-  } as Parameters<typeof useQuery>[0])
+  })
 
   const { mutate: send, isPending: isSending } = useMutation({
     mutationFn: sendChatMessage,
-    onMutate: (message: string) => {
-      setMessages((prev) => [...prev, { role: "user", content: message }])
+    onMutate: async (message: string) => {
       setInput("")
+      await queryClient.cancelQueries({ queryKey: ["chat-history"] })
+      const previous = queryClient.getQueryData<ChatMessage[]>(["chat-history"])
+      queryClient.setQueryData<ChatMessage[]>(["chat-history"], (old = []) => [
+        ...old,
+        { role: "user", content: message },
+      ])
+      return { previous }
     },
     onSuccess: (response: string) => {
-      setMessages((prev) => [
-        ...prev,
+      queryClient.setQueryData<ChatMessage[]>(["chat-history"], (old = []) => [
+        ...old,
         { role: "assistant", content: response },
       ])
     },
-    onError: (err: unknown) => {
-      // Remove the optimistic user message
-      setMessages((prev) => prev.slice(0, -1))
+    onError: (err: unknown, _vars, context) => {
+      // Rollback optimistic user message
+      queryClient.setQueryData(["chat-history"], context?.previous)
       const message =
         (err as { response?: { data?: { message?: string } } })?.response?.data
           ?.message || "AI service unavailable, please try again"
@@ -84,13 +86,21 @@ export function ChatPage() {
 
   const { mutate: clearChat } = useMutation({
     mutationFn: clearChatHistory,
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ["chat-history"] })
+      const previous = queryClient.getQueryData<ChatMessage[]>(["chat-history"])
+      queryClient.setQueryData<ChatMessage[]>(["chat-history"], [])
+      return { previous }
+    },
     onSuccess: () => {
-      setMessages([])
-      queryClient.invalidateQueries({ queryKey: ["chat-history"] })
       toast.success("Chat cleared")
     },
-    onError: () => {
+    onError: (_err, _vars, context) => {
+      queryClient.setQueryData(["chat-history"], context?.previous)
       toast.error("Failed to clear chat")
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["chat-history"] })
     },
   })
 
