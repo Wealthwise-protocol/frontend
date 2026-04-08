@@ -4,7 +4,7 @@ This file provides context for Claude Code when working on the WealthWise fronte
 
 ## Project Overview
 
-WealthWise is a mutual fund investment platform. This is the React frontend that connects to a Spring Boot backend deployed on Render.
+WealthWise is a mutual fund investment platform with AI-powered insights. This is the React frontend that connects to a Spring Boot backend deployed on Render.
 
 ## Commands
 
@@ -16,6 +16,8 @@ npm run lint         # ESLint
 npm run format       # Prettier
 npm run preview      # Preview production build
 ```
+
+Always run `npm run typecheck` after making changes to verify nothing is broken.
 
 ## Architecture
 
@@ -29,17 +31,17 @@ npm run preview      # Preview production build
 - React Router v7
 
 ### Directory Layout
-- `src/pages/` — Route-level page components
-- `src/components/dashboard/` — Dashboard-specific components (sidebar, charts, tables)
-- `src/components/explore/` — Fund card, fund detail drawer, fund search dialog
-- `src/components/landing/` — Landing page sections
-- `src/components/ui/` — shadcn/ui primitives (do NOT edit manually — use `npx shadcn@latest add <component>`)
-- `src/services/` — API call functions (api.ts has axios instance, auth.ts, funds.ts)
-- `src/stores/` — Zustand stores (auth-store.ts only — all other stores have been removed)
-- `src/hooks/` — Custom hooks (use-auth.ts, use-media-query.ts, use-portfolio.ts)
-- `src/data/` — Static data (funds.ts has Fund type + hardcoded fund array for landing page)
-- `src/types/` — Shared TypeScript types
-- `src/lib/utils.ts` — `cn()` helper (clsx + tailwind-merge)
+- `src/pages/` -- Route-level page components
+- `src/components/dashboard/` -- Dashboard-specific components (sidebar, charts, tables, AI insight card)
+- `src/components/explore/` -- Fund card, fund detail drawer, fund search dialog
+- `src/components/landing/` -- Landing page sections
+- `src/components/ui/` -- shadcn/ui primitives (do NOT edit manually -- use `npx shadcn@latest add <component>`)
+- `src/services/` -- API call functions (api.ts has axios instance, auth.ts, chat.ts, funds.ts)
+- `src/stores/` -- Zustand stores (auth-store.ts only -- all other stores have been removed)
+- `src/hooks/` -- Custom hooks (use-auth.ts, use-media-query.ts, use-portfolio.ts)
+- `src/data/` -- Static data (funds.ts has Fund type + hardcoded fund array for landing page)
+- `src/types/` -- Shared TypeScript types
+- `src/lib/utils.ts` -- `cn()` helper (clsx + tailwind-merge)
 
 ### Path Alias
 `@/*` maps to `./src/*` (configured in tsconfig and vite.config.ts).
@@ -66,38 +68,39 @@ Local: `http://localhost:9095`
 ## State Management
 
 ### Zustand Store
-- `ww-auth` — User session (user object, token, isAuthenticated). This is the only Zustand store.
+- `ww-auth` -- User session (user object, token, isAuthenticated). This is the only Zustand store.
 
 ### React Query Keys
-- `["funds"]` — Paginated fund list from `/funds`
-- `["funds", "search"]` — Full fund list for search dialog
-- `["bookmarks"]` — Bookmarked fund IDs from `/bookmarks`
-- `["portfolio", period?]` — Portfolio overview (holdings, history, allocation, summary) from `/portfolio/all-details`
-- `["sips"]` — SIP list from `/sips`
-- `["transactions"]` — Transaction list from `/transactions`
-- `["nav-history", fundId, period]` — NAV history for a specific fund
+- `["funds"]` -- Paginated fund list from `/funds`
+- `["funds", "search"]` -- Full fund list for search dialog
+- `["bookmarks"]` -- Bookmarked fund IDs from `/bookmarks`
+- `["portfolio", period?]` -- Portfolio overview (holdings, history, allocation, summary) from `/portfolio/all-details`
+- `["sips"]` -- SIP list from `/sips`
+- `["transactions"]` -- Transaction list from `/transactions`
+- `["nav-history", fundId, period]` -- NAV history for a specific fund
+- `["ai-insight"]` -- AI-generated portfolio insight (30min stale time)
 
 ## Auth Flow
 
-1. Sign in/up → API returns `{ user, token }`
+1. Sign in/up -> API returns `{ user, token }`
 2. Token stored in cookie `ww-token` (7-day expiry, sameSite: lax)
 3. User + token stored in Zustand auth store (persisted to `ww-auth`)
 4. `AuthGuard` component checks `isAuthenticated`, redirects to `/signin` if false
 5. Axios interceptor attaches token to all requests
-6. 401 response → auto sign-out, redirect to `/signin`
+6. 401 response -> auto sign-out, redirect to `/signin`
 
 ## Routing
 
 Public: `/`, `/signin`, `/signup`, `/forgot-password`, `/reset-password`
-Protected (wrapped in `AuthGuard`): `/dashboard`, `/dashboard/explore`, `/dashboard/sip`, `/dashboard/transactions`, `/dashboard/profile`
+Protected (wrapped in `AuthGuard`): `/dashboard`, `/dashboard/explore`, `/dashboard/sip`, `/dashboard/transactions`, `/dashboard/profile`, `/dashboard/chat`
 
 ## Styling
 
 - Tailwind CSS v4 with CSS variables defined in `src/index.css`
 - OKLch color space for all theme colors
-- Dark mode via `next-themes` — toggled with ThemeToggle component or pressing `d`
+- Dark mode via `next-themes` -- toggled with ThemeToggle component or pressing `d`
 - Font: JetBrains Mono Variable (monospace)
-- Animations via `motion` library — custom components in `src/components/ui/animated.tsx` (FadeIn, StaggerContainer, StaggerItem, CountUp)
+- Animations via `motion` library -- custom components in `src/components/ui/animated.tsx` (FadeIn, StaggerContainer, StaggerItem, CountUp)
 
 ## Code Style
 
@@ -112,16 +115,17 @@ Protected (wrapped in `AuthGuard`): `/dashboard`, `/dashboard/explore`, `/dashbo
 
 - Fund type is defined in `src/data/funds.ts`, NOT in `src/types/index.ts`
 - All other shared types (User, SIP, Transaction, Holding, Installment) are in `src/types/index.ts`
-- Adding UI components: `npx shadcn@latest add <name>` — places them in `src/components/ui/`
+- Adding UI components: `npx shadcn@latest add <name>` -- places them in `src/components/ui/`
 - Icons: use `@tabler/icons-react` (e.g., `IconSearch`, `IconBookmark`)
 - Toast notifications: use `toast` from `sonner`
 - Responsive: mobile-first, sidebar collapses on mobile, bottom nav shown instead
 - Use `useMediaQuery("(min-width: 768px)")` for responsive logic in components
-- All API data flows through React Query — do not use Zustand for server state
+- All API data flows through React Query -- do not use Zustand for server state
 - Backend error messages are surfaced in toasts via `err.response.data.message`
 
 ## Things to Watch Out For
 
 - The `src/data/funds.ts` exports both the `Fund` type and a hardcoded `funds` array. The explore page fetches from the API, but the hardcoded array is still used by `src/components/landing/fund-preview.tsx`.
-- Portfolio chart period filter passes `period` param to `/portfolio/all-details` — the backend filters the `portfolioHistory` array server-side.
+- Portfolio chart period filter passes `period` param to `/portfolio/all-details` -- the backend filters the `portfolioHistory` array server-side.
 - The `usePortfolio(period?)` hook is shared by all dashboard components. Stat cards, asset allocation, and holdings table call it without a period (defaults to no filter). The portfolio chart passes the active period. React Query deduplicates calls with the same key.
+- `.env` is gitignored. Use `.env.example` as a template for required environment variables.

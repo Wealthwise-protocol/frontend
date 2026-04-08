@@ -1,6 +1,6 @@
 # WealthWise
 
-A modern mutual fund investment platform built with React, TypeScript, and Tailwind CSS. Browse funds, manage SIPs, track your portfolio, and bookmark your favorites — all in a responsive, dark-mode-ready interface.
+A modern mutual fund investment platform built with React, TypeScript, and Tailwind CSS. Browse funds, manage SIPs, track your portfolio, get AI-powered insights, and bookmark your favorites — all in a responsive, dark-mode-ready interface.
 
 ## Tech Stack
 
@@ -37,17 +37,23 @@ npm install
 
 ### Environment Variables
 
-Create a `.env` file in the project root:
+Copy the example env file and fill in the values:
 
-```env
-VITE_API_BASE_URL=https://wealthwise-backend-7zqx.onrender.com
+```bash
+cp .env.example .env
 ```
 
-For local backend development:
+| Variable | Description | Default |
+|---|---|---|
+| `VITE_API_BASE_URL` | Backend API base URL | `https://wealthwise-backend-7zqx.onrender.com` |
+
+For local backend development, set:
 
 ```env
 VITE_API_BASE_URL=http://localhost:9095
 ```
+
+> **Note:** Never commit `.env` files. The `.env.example` file contains placeholder values safe for version control.
 
 ### Development
 
@@ -55,13 +61,16 @@ VITE_API_BASE_URL=http://localhost:9095
 npm run dev
 ```
 
-### Build
+The app will be available at `http://localhost:5173`.
+
+### Production Build
 
 ```bash
 npm run build
+npm run preview   # preview the build locally
 ```
 
-### Other Scripts
+### Available Scripts
 
 | Command | Description |
 |---|---|
@@ -77,10 +86,10 @@ npm run build
 ```
 src/
 ├── components/
-│   ├── dashboard/       # Sidebar, stats, charts, holdings table
+│   ├── dashboard/       # Sidebar, stats, charts, holdings table, AI insight card
 │   ├── explore/         # Fund cards, fund detail drawer, search dialog
 │   ├── landing/         # Navbar, hero, steps, CTA, footer
-│   ├── ui/              # shadcn/ui primitives (40+ components)
+│   ├── ui/              # shadcn/ui primitives (do not edit manually)
 │   ├── auth-guard.tsx   # Route protection
 │   ├── theme-provider.tsx
 │   └── theme-toggle.tsx
@@ -95,13 +104,15 @@ src/
 │   ├── sip.tsx          # SIP management
 │   ├── transactions.tsx # Transaction history
 │   ├── profile.tsx      # User profile
+│   ├── chat.tsx         # AI chat (Ask X)
 │   └── not-found.tsx    # 404
 ├── services/
 │   ├── api.ts           # Axios instance + interceptors
 │   ├── auth.ts          # Auth API calls
+│   ├── chat.ts          # AI chat & insight API calls
 │   └── funds.ts         # Funds, portfolio, SIPs, transactions API calls
 ├── stores/
-│   └── auth-store.ts    # User session (only remaining store)
+│   └── auth-store.ts    # User session (only store)
 ├── hooks/
 │   ├── use-auth.ts      # Auth mutations (sign in/up/out)
 │   ├── use-media-query.ts
@@ -138,19 +149,21 @@ src/
 | `/dashboard/sip` | SIP management |
 | `/dashboard/transactions` | Transaction history |
 | `/dashboard/profile` | User profile |
+| `/dashboard/chat` | AI assistant (Ask X) |
 
 ## Features
 
-- **Fund Explorer** — Browse, search (Cmd+K), and filter mutual funds by category (Equity, Debt, Hybrid, ELSS, Index). View detailed fund info, real NAV history charts with period filtering, and returns comparison.
-- **Lumpsum & SIP Investing** — Invest via one-time lumpsum or set up monthly SIPs directly from the fund detail drawer.
-- **Bookmarks** — Save/unsave funds with optimistic UI updates backed by the API.
-- **SIP Management** — Create, pause, resume, edit amount, and cancel SIPs. All mutations persist to the backend with optimistic updates and rollback on failure.
-- **Portfolio Dashboard** — Track holdings, portfolio value over time (bar chart with 1M/3M/6M/1Y/ALL period filter), and asset allocation (donut chart). All data from real API.
-- **Transaction History** — View and filter past SIP and lumpsum transactions by type.
-- **Authentication** — JWT-based auth with auto sign-out on 401, password reset flow, and protected routes.
-- **Dark Mode** — System-aware theme toggle (press `d` to switch).
-- **Responsive** — Mobile-first with collapsible sidebar and bottom navigation.
-- **Loading & Empty States** — Skeleton loaders, spinners, and friendly empty states with CTAs across all pages.
+- **Fund Explorer** -- Browse, search (Cmd+K), and filter mutual funds by category (Equity, Debt, Hybrid, ELSS, Index). View detailed fund info, real NAV history charts with period filtering, and returns comparison.
+- **Lumpsum & SIP Investing** -- Invest via one-time lumpsum or set up monthly SIPs directly from the fund detail drawer.
+- **Bookmarks** -- Save/unsave funds with optimistic UI updates backed by the API.
+- **SIP Management** -- Create, pause, resume, edit amount, and cancel SIPs. All mutations persist to the backend with optimistic updates and rollback on failure.
+- **Portfolio Dashboard** -- Track holdings, portfolio value over time (bar chart with 1M/3M/6M/1Y/ALL period filter), and asset allocation (donut chart). All data from real API.
+- **AI Insights (Ask X)** -- AI-powered financial co-pilot that analyzes your portfolio, suggests funds, and helps plan SIPs.
+- **Transaction History** -- View and filter past SIP and lumpsum transactions by type.
+- **Authentication** -- JWT-based auth with auto sign-out on 401, password reset flow, and protected routes.
+- **Dark Mode** -- System-aware theme toggle (press `d` to switch).
+- **Responsive** -- Mobile-first with collapsible sidebar and bottom navigation.
+- **Loading & Empty States** -- Skeleton loaders, spinners, and friendly empty states with CTAs across all pages.
 
 ## API Integration
 
@@ -174,12 +187,16 @@ The frontend connects to the WealthWise Spring Boot backend at the URL specified
 | GET | `/bookmarks` | Get saved fund IDs |
 | POST | `/bookmarks/:fundId` | Bookmark a fund |
 | DELETE | `/bookmarks/:fundId` | Remove bookmark |
-| GET | `/portfolio/all-details?period=` | Portfolio overview (holdings, history, allocation, summary) |
+| GET | `/portfolio/all-details?period=` | Portfolio overview |
 | GET | `/sips` | List user's SIPs |
 | POST | `/sips` | Create a new SIP |
-| PATCH | `/sips` | Update SIP (pause/resume/edit amount) |
+| PATCH | `/sips` | Update SIP (pause/resume/edit) |
 | DELETE | `/sips?id=` | Cancel a SIP |
 | GET | `/transactions` | List user's transactions |
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions, coding standards, and contribution guidelines.
 
 ## License
 
