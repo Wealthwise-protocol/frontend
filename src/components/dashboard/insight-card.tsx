@@ -13,7 +13,7 @@ export function InsightCard() {
     staleTime: 1000 * 60 * 30,
   })
 
-  if (isError || (!isLoading && !insight)) return null
+  const fallback = isError || (!isLoading && !insight)
 
   return (
     <Card className="insight-card">
@@ -24,6 +24,21 @@ export function InsightCard() {
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-3/4" />
           </div>
+        ) : fallback ? (
+          <>
+            <p className="mb-1.5 flex items-center gap-1.5 section-label">
+              <span className="inline-flex items-center justify-center rounded-md bg-primary/10 p-2 text-primary"><IconSparkles className="size-3" /></span>
+              X Insight
+            </p>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Ask X to analyze your portfolio, suggest funds, or plan your SIPs.
+            </p>
+            <div className="mt-3">
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/dashboard/chat">Talk to X</Link>
+              </Button>
+            </div>
+          </>
         ) : (
           <>
             <p className="mb-1.5 flex items-center gap-1.5 section-label">
