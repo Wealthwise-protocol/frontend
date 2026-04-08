@@ -1,7 +1,10 @@
 import { useEffect, useState, useCallback, useRef } from "react"
-import { Outlet, useNavigate, useLocation } from "react-router-dom"
+import { Link, Outlet, useNavigate, useLocation } from "react-router-dom"
+import { PageTransition } from "@/components/ui/animated"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { SidebarProvider, BottomNav, useSidebarState } from "@/components/dashboard/sidebar"
+import { SessionTimeoutModal } from "@/components/session-timeout-modal"
+import { OfflineBanner } from "@/components/offline-banner"
 import { ProfileDropdown } from "@/components/dashboard/profile-dropdown"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { FundSearchDialog } from "@/components/explore/fund-search-dialog"
@@ -22,6 +25,8 @@ function LayoutShell() {
   const { data: savedFundIds = [] } = useQuery({
     queryKey: ["bookmarks"],
     queryFn: fetchBookmarks,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   })
 
   const { mutate: toggleSave } = useMutation({
@@ -81,31 +86,59 @@ function LayoutShell() {
         collapsed ? "md:ml-14" : "md:ml-56"
       )}
     >
-      <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between border-b border-border/50 bg-background/80 px-4 shadow-[0_1px_12px_-4px_oklch(0.55_0.17_162/0.08)] backdrop-blur-md dark:shadow-[0_1px_12px_-4px_oklch(0.65_0.17_162/0.12)] md:px-6">
-        {/* Search trigger in header */}
-        <button
-          type="button"
-          onClick={() => setSearchOpen(true)}
-          className="flex h-8 items-center gap-2 rounded-md border border-border bg-muted/50 px-2 text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground sm:px-3"
-        >
-          <IconSearch className="size-3.5 shrink-0" />
-          <span className="hidden text-muted-foreground sm:inline">Search funds...</span>
-          <kbd className="pointer-events-none hidden h-5 items-center gap-0.5 rounded border border-border bg-background px-1.5 text-[0.6rem] font-medium sm:inline-flex">
-            <IconCommand className="size-2.5" />K
-          </kbd>
-        </button>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md focus:text-sm focus:font-medium"
+      >
+        Skip to main content
+      </a>
+      <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between border-b border-border bg-background/95 backdrop-blur-sm card-shadow px-4 md:px-6">
+        <div className="flex items-center gap-3">
+          {/* Logo — visible on mobile only */}
+          <Link to="/" className="flex items-center gap-2 md:hidden">
+            <img src="/wealthwiselogonobg.png" alt="WealthWise" className="size-6 shrink-0" />
+            <span className="text-sm font-bold tracking-wide text-primary">WealthWise</span>
+          </Link>
+
+          {/* Search trigger */}
+          <button
+            type="button"
+            onClick={() => setSearchOpen(true)}
+            className="hidden h-8 items-center gap-2 rounded-md border border-border bg-background px-2 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:px-3 md:flex"
+          >
+            <IconSearch className="size-3.5 shrink-0" />
+            <span className="hidden text-muted-foreground sm:inline">Search funds...</span>
+            <kbd className="pointer-events-none hidden h-5 items-center gap-0.5 rounded border border-border bg-muted px-1.5 text-[0.6rem] font-medium sm:inline-flex">
+              <IconCommand className="size-2.5" />K
+            </kbd>
+          </button>
+        </div>
 
         <div className="flex items-center gap-1">
+          {/* Search icon on mobile */}
+          <button
+            type="button"
+            onClick={() => setSearchOpen(true)}
+            className="flex min-h-[44px] min-w-[44px] items-center justify-center text-muted-foreground md:hidden"
+            aria-label="Search funds"
+          >
+            <IconSearch className="size-4" />
+          </button>
           <ThemeToggle />
           <ProfileDropdown />
         </div>
       </header>
 
-      <main className="flex-1 bg-grid-pattern p-4 pb-20 md:p-6 md:pb-6">
-        <Outlet context={{ setSearchOpen, selectFundRef }} />
+      <OfflineBanner />
+
+      <main id="main-content" className="flex-1 bg-grid-pattern p-4 pb-24 md:p-6 md:pb-6">
+        <PageTransition locationKey={location.pathname}>
+          <Outlet context={{ setSearchOpen, selectFundRef }} />
+        </PageTransition>
       </main>
 
       <BottomNav />
+      <SessionTimeoutModal />
 
       {/* Global fund search dialog */}
       <FundSearchDialog

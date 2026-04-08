@@ -22,8 +22,8 @@ const funds = [
 export function FundPreview() {
   return (
     <section id="funds" className="mx-auto max-w-6xl px-4 py-12 sm:px-6 md:py-24">
-      <div className="overflow-hidden rounded-xl border border-border/50 bg-card dark:border-white/[0.08] dark:bg-white/[0.04]">
-        <div className="hidden border-b border-border/50 px-4 py-3 sm:block sm:px-5">
+      <div className="overflow-hidden rounded-xl card-shadow-md border border-border bg-card">
+        <div className="hidden border-b border-border px-4 py-3 sm:block sm:px-5">
           <span className="inline-block rounded-md bg-muted px-2.5 py-1 text-[0.65rem] text-muted-foreground">
             app.wealthwise.in/explore
           </span>
@@ -34,7 +34,7 @@ export function FundPreview() {
             Search by AMC, fund name, or category...
           </div>
 
-          <div className="mt-4 divide-y divide-border/50">
+          <div className="mt-4 divide-y divide-border">
             {funds.map((fund) => (
               <div
                 key={fund.name}
@@ -43,7 +43,7 @@ export function FundPreview() {
                 <div className="min-w-0">
                   <p className="truncate text-[0.65rem] font-semibold sm:text-xs">{fund.name}</p>
                   <div className="mt-1 flex items-center gap-1.5">
-                    <span className="rounded bg-muted px-1.5 py-0.5 text-[0.55rem] text-muted-foreground sm:text-[0.6rem]">
+                    <span className="rounded-full bg-secondary px-1.5 py-0.5 text-[0.55rem] text-secondary-foreground sm:text-[0.6rem]">
                       {fund.category}
                     </span>
                     <span className="text-[0.55rem] text-muted-foreground sm:text-[0.6rem]">
@@ -58,8 +58,8 @@ export function FundPreview() {
                       <p className="text-[0.55rem] text-muted-foreground sm:text-[0.6rem]">
                         {period}
                       </p>
-                      <p className="text-[0.65rem] font-medium text-emerald-500 sm:text-xs">
-                        {value}
+                      <p className="text-[0.65rem] font-medium num-positive sm:text-xs">
+                        ↑ {value}
                       </p>
                     </div>
                   ))}

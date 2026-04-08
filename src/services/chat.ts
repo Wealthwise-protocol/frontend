@@ -22,3 +22,8 @@ export async function fetchChatHistory(): Promise<ChatMessage[]> {
 export async function clearChatHistory(): Promise<void> {
   await api.delete("/api/ai/history")
 }
+
+export async function fetchAiInsight(): Promise<string> {
+  const { data } = await api.get<{ insight: string }>("/api/ai/insight")
+  return data.insight
+}

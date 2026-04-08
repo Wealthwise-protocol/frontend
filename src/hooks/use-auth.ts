@@ -4,6 +4,7 @@ import { toast } from "sonner"
 import { authService, type SignInPayload, type SignUpPayload } from "@/services/auth"
 import { useQueryClient } from "@tanstack/react-query"
 import { useAuthStore } from "@/stores/auth-store"
+import { getErrorMessage } from "@/lib/error-messages"
 
 export function useSignIn() {
   const navigate = useNavigate()
@@ -13,12 +14,12 @@ export function useSignIn() {
     mutationFn: (data: SignInPayload) => authService.signIn(data),
     onSuccess: (res) => {
       setAuth(res.user, res.token)
+      localStorage.setItem("ww-last-login", new Date().toISOString())
       toast.success("Welcome back!")
       navigate("/dashboard")
     },
     onError: (err: unknown) => {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      toast.error(msg || "Invalid email or password")
+      toast.error(getErrorMessage(err, "Invalid email or password"))
     },
   })
 }
@@ -33,8 +34,7 @@ export function useSignUp() {
       toast.success("Account created successfully!")
     },
     onError: (err: unknown) => {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      toast.error(msg || "Something went wrong. Please try again.")
+      toast.error(getErrorMessage(err))
     },
   })
 }

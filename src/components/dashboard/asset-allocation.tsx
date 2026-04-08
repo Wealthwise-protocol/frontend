@@ -6,8 +6,8 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
+import { Skeleton } from "@/components/ui/skeleton"
 import { usePortfolio } from "@/hooks/use-portfolio"
-import { IconLoader2 } from "@tabler/icons-react"
 
 const chartConfig = {
   equity: { label: "Equity", color: "var(--color-chart-3)" },
@@ -25,8 +25,13 @@ export function AssetAllocation() {
         <h3 className="text-sm font-semibold">Asset Allocation</h3>
 
         {isLoading ? (
-          <div className="mt-4 flex h-[180px] items-center justify-center">
-            <IconLoader2 className="size-6 animate-spin text-muted-foreground" />
+          <div className="mt-4 flex h-[180px] flex-col items-center justify-center gap-4">
+            <Skeleton className="size-[140px] rounded-full" />
+            <div className="flex w-full flex-col gap-2">
+              <Skeleton className="h-3 w-full" />
+              <Skeleton className="h-3 w-3/4" />
+              <Skeleton className="h-3 w-1/2" />
+            </div>
           </div>
         ) : isError ? (
           <div className="mt-4 flex h-[180px] items-center justify-center">
@@ -39,6 +44,9 @@ export function AssetAllocation() {
           </div>
         ) : (
           <>
+            <p className="sr-only">
+              Donut chart showing asset allocation: {allocation.map((item) => `${item.label} ${item.value}%`).join(", ")}.
+            </p>
             <ChartContainer config={chartConfig} className="mx-auto mt-4 h-[180px] w-[180px]">
               <PieChart>
                 <ChartTooltip content={<ChartTooltipContent />} />
@@ -60,7 +68,7 @@ export function AssetAllocation() {
                 <div key={item.name} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div
-                      className="size-2.5 rounded-full"
+                      className="size-2.5"
                       style={{ backgroundColor: `var(--color-${item.name})` }}
                     />
                     <span className="text-xs text-muted-foreground">

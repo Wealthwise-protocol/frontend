@@ -2,7 +2,6 @@ import { useEffect, useState, useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { type Fund } from "@/data/funds"
 import { fetchFunds } from "@/services/funds"
-import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import {
   CommandDialog,
@@ -21,11 +20,11 @@ import {
   IconLoader2,
 } from "@tabler/icons-react"
 
-const riskColors: Record<string, string> = {
-  LOW: "border-emerald-500/30 text-emerald-500",
-  MODERATE: "border-yellow-500/30 text-yellow-500",
-  HIGH: "border-orange-500/30 text-orange-500",
-  "VERY HIGH": "border-red-500/30 text-red-500",
+const riskClasses: Record<string, string> = {
+  LOW: "risk-low",
+  MODERATE: "risk-moderate",
+  HIGH: "risk-high",
+  "VERY HIGH": "risk-very-high",
 }
 
 const categoryOrder = ["Equity", "Debt", "Hybrid", "ELSS", "Index"] as const
@@ -49,6 +48,8 @@ export function FundSearchDialog({
     queryKey: ["funds", "search"],
     queryFn: () => fetchFunds(0, 100),
     enabled: open,
+    staleTime: 30 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   })
 
   const fundList: Fund[] = data?.content ?? []
@@ -147,15 +148,14 @@ export function FundSearchDialog({
                             <span className="truncate text-xs font-semibold">
                               {fund.name}
                             </span>
-                            <Badge
-                              variant="outline"
+                            <span
                               className={cn(
                                 "hidden shrink-0 text-[0.5rem] sm:inline-flex",
-                                riskColors[fund.risk]
+                                riskClasses[fund.risk]
                               )}
                             >
                               {fund.risk}
-                            </Badge>
+                            </span>
                           </div>
                           <div className="mt-0.5 flex items-center gap-2">
                             <span className="truncate text-[0.65rem] text-muted-foreground">
@@ -172,8 +172,8 @@ export function FundSearchDialog({
 
                         {/* Returns */}
                         <div className="hidden shrink-0 items-center gap-1 sm:flex">
-                          <IconTrendingUp className="size-3 text-emerald-500" />
-                          <span className="text-xs font-semibold text-emerald-500">
+                          <IconTrendingUp className="size-3 text-gain" />
+                          <span className="text-xs font-semibold num-positive">
                             {fund.returns["1Y"]}%
                           </span>
                           <span className="text-[0.55rem] text-muted-foreground">
@@ -215,7 +215,7 @@ export function FundSearchDialog({
 
           {/* Footer hint */}
           {filtered.length > 0 && (
-            <div className="flex items-center justify-between border-t border-border/50 px-3 py-2">
+            <div className="flex items-center justify-between border-t border-border px-3 py-2">
               <span className="text-[0.6rem] text-muted-foreground">
                 {filtered.length} fund{filtered.length !== 1 ? "s" : ""}
               </span>

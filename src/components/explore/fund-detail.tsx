@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import type { Fund } from "@/data/funds"
 import { createSip, investLumpsum, fetchNavHistory } from "@/services/funds"
 import { toast } from "sonner"
+import { getErrorMessage } from "@/lib/error-messages"
 import { IconLoader2 } from "@tabler/icons-react"
 import {
   Sheet,
@@ -27,6 +28,7 @@ import {
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import { cn } from "@/lib/utils"
 import { useMediaQuery } from "@/hooks/use-media-query"
+import { FinanceTerm } from "@/components/finance-term"
 
 const navChartConfig = {
   nav: { label: "NAV", color: "var(--color-primary)" },
@@ -37,11 +39,11 @@ function formatNavDate(dateStr: string): string {
   return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" })
 }
 
-const riskColors: Record<string, string> = {
-  LOW: "border-emerald-500/30 text-emerald-500",
-  MODERATE: "border-yellow-500/30 text-yellow-500",
-  HIGH: "border-orange-500/30 text-orange-500",
-  "VERY HIGH": "border-red-500/30 text-red-500",
+const riskClasses: Record<string, string> = {
+  LOW: "risk-low",
+  MODERATE: "risk-moderate",
+  HIGH: "risk-high",
+  "VERY HIGH": "risk-very-high",
 }
 
 export function FundDetail({
@@ -57,9 +59,7 @@ export function FundDetail({
   const [investTab, setInvestTab] = useState("sip")
   const [amount, setAmount] = useState("")
   const [activePeriod, setActivePeriod] = useState("1Y")
-  const [step, setStep] = useState<"details" | "confirm" | "success">(
-    "details"
-  )
+  const [step, setStep] = useState<"details" | "confirm" | "success">("details")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const queryClient = useQueryClient()
 
@@ -67,6 +67,8 @@ export function FundDetail({
     queryKey: ["nav-history", fund?.id, activePeriod],
     queryFn: () => fetchNavHistory(fund!.id, activePeriod),
     enabled: open && !!fund,
+    staleTime: 30 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   })
 
   const navHistory = (navHistoryRaw ?? []).map((p) => ({
@@ -120,11 +122,21 @@ export function FundDetail({
       queryClient.invalidateQueries({ queryKey: ["portfolio"] })
       queryClient.invalidateQueries({ queryKey: ["transactions"] })
 
-      toast.success(investTab === "sip" ? "SIP created successfully!" : "Investment successful!")
+      toast.success(
+        investTab === "sip"
+          ? "SIP created successfully!"
+          : "Investment successful!"
+      )
       setStep("success")
     } catch (err) {
-      const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      toast.error(message || (investTab === "sip" ? "Failed to create SIP. Please try again." : "Failed to invest. Please try again."))
+      toast.error(
+        getErrorMessage(
+          err,
+          investTab === "sip"
+            ? "Failed to create SIP. Please try again."
+            : "Failed to invest. Please try again."
+        )
+      )
     } finally {
       setIsSubmitting(false)
     }
@@ -140,7 +152,7 @@ export function FundDetail({
       <SheetContent
         side={isDesktop ? "right" : "bottom"}
         className={cn(
-          isDesktop ? "w-full max-w-lg overflow-y-auto" : "!h-[92vh] rounded-t-xl"
+          isDesktop ? "w-full max-w-lg overflow-y-auto" : "!h-[92vh]"
         )}
       >
         <SheetHeader className="shrink-0">
@@ -149,459 +161,480 @@ export function FundDetail({
         </SheetHeader>
 
         <div className={cn(!isDesktop && "min-h-0 flex-1 overflow-y-auto")}>
-        {step === "details" && (
-          <div className="flex flex-col gap-6 px-6 pb-6">
-            {/* Fund info badges */}
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="outline" className="text-[0.6rem]">
-                {fund.category} - {fund.subcategory}
-              </Badge>
-              <Badge
-                variant="outline"
-                className={cn("text-[0.6rem]", riskColors[fund.risk])}
-              >
-                {fund.risk} RISK
-              </Badge>
-            </div>
-
-            {/* Description */}
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              {fund.description}
-            </p>
-
-            {/* Fund details grid */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-md border border-border p-3">
-                <p className="text-[0.6rem] text-muted-foreground">AUM</p>
-                <p className="mt-0.5 text-xs font-semibold">{fund.aum}</p>
-              </div>
-              <div className="rounded-md border border-border p-3">
-                <p className="text-[0.6rem] text-muted-foreground">
-                  Expense Ratio
-                </p>
-                <p className="mt-0.5 text-xs font-semibold">
-                  {fund.expenseRatio}%
-                </p>
-              </div>
-              <div className="rounded-md border border-border p-3">
-                <p className="text-[0.6rem] text-muted-foreground">Min SIP</p>
-                <p className="mt-0.5 text-xs font-semibold">
-                  ₹{fund.minSip.toLocaleString("en-IN")}
-                </p>
-              </div>
-              <div className="rounded-md border border-border p-3">
-                <p className="text-[0.6rem] text-muted-foreground">
-                  Min Lumpsum
-                </p>
-                <p className="mt-0.5 text-xs font-semibold">
-                  ₹{fund.minLumpsum.toLocaleString("en-IN")}
-                </p>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* NAV History */}
-            <div>
-              <h4 className="text-sm font-semibold">NAV History</h4>
-              <div className="mt-2 flex items-baseline gap-2">
-                <span className="text-xl font-bold">₹{fund.nav}</span>
-                <span className="text-xs font-medium text-emerald-500">
-                  +₹{fund.navChange} (+{fund.navChangePercent}%)
+          {step === "details" && (
+            <div className="flex flex-col gap-6 px-6 pb-6">
+              {/* Fund info badges */}
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="secondary" className="text-[0.6rem]">
+                  {fund.category} - {fund.subcategory}
+                </Badge>
+                <span className={cn("text-[0.6rem]", riskClasses[fund.risk])}>
+                  {fund.risk} RISK
                 </span>
               </div>
 
-              {navLoading ? (
-                <div className="mt-4 flex h-40 items-center justify-center">
-                  <IconLoader2 className="size-5 animate-spin text-muted-foreground" />
-                </div>
-              ) : navHistory.length === 0 ? (
-                <div className="mt-4 flex h-40 items-center justify-center">
-                  <p className="text-xs text-muted-foreground">No NAV data available</p>
-                </div>
-              ) : (
-              <ChartContainer
-                config={navChartConfig}
-                className="mt-4 h-40 w-full"
-              >
-                <AreaChart data={navHistory}>
-                  <defs>
-                    <linearGradient id="navGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop
-                        offset="0%"
-                        stopColor="var(--color-nav)"
-                        stopOpacity={0.3}
-                      />
-                      <stop
-                        offset="100%"
-                        stopColor="var(--color-nav)"
-                        stopOpacity={0}
-                      />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis
-                    dataKey="month"
-                    tickLine={false}
-                    axisLine={false}
-                    fontSize={10}
-                  />
-                  <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    fontSize={10}
-                    domain={["dataMin - 2", "dataMax + 2"]}
-                    tickFormatter={(v) => `₹${v}`}
-                  />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Area
-                    dataKey="nav"
-                    type="monotone"
-                    stroke="var(--color-nav)"
-                    fill="url(#navGradient)"
-                    strokeWidth={2}
-                  />
-                </AreaChart>
-              </ChartContainer>
-              )}
+              {/* Description */}
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                {fund.description}
+              </p>
 
-              <div className="mt-3 flex items-center gap-1">
-                {periods.map((p) => (
-                  <button
-                    key={p}
-                    onClick={() => setActivePeriod(p)}
-                    className={cn(
-                      "rounded-sm px-2.5 py-1 text-[0.65rem] font-medium transition-colors",
-                      activePeriod === p
-                        ? "text-primary"
-                        : "text-muted-foreground hover:text-foreground"
-                    )}
+              {/* Fund details grid */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-md border border-border p-3">
+                  <p className="text-[0.6rem] text-muted-foreground"><FinanceTerm term="AUM" className="text-[0.6rem]" /></p>
+                  <p className="mt-0.5 text-xs font-semibold">{fund.aum}</p>
+                </div>
+                <div className="rounded-md border border-border p-3">
+                  <p className="text-[0.6rem] text-muted-foreground">
+                    <FinanceTerm term="Expense Ratio" className="text-[0.6rem]" />
+                  </p>
+                  <p className="mt-0.5 text-xs font-semibold">
+                    {fund.expenseRatio}%
+                  </p>
+                </div>
+                <div className="rounded-md border border-border p-3">
+                  <p className="text-[0.6rem] text-muted-foreground">Min <FinanceTerm term="SIP" className="text-[0.6rem]" /></p>
+                  <p className="mt-0.5 text-xs font-semibold">
+                    ₹{fund.minSip.toLocaleString("en-IN")}
+                  </p>
+                </div>
+                <div className="rounded-md border border-border p-3">
+                  <p className="text-[0.6rem] text-muted-foreground">
+                    Min Lumpsum
+                  </p>
+                  <p className="mt-0.5 text-xs font-semibold">
+                    ₹{fund.minLumpsum.toLocaleString("en-IN")}
+                  </p>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* NAV History */}
+              <div>
+                <h4 className="text-sm font-semibold"><FinanceTerm term="NAV" className="text-sm" /> History</h4>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className="num text-xl font-bold">₹{fund.nav}</span>
+                  <span className="num-positive text-xs font-medium">
+                    +₹{fund.navChange} (+{fund.navChangePercent}%)
+                  </span>
+                </div>
+
+                {navLoading ? (
+                  <div className="mt-4 flex h-40 items-center justify-center">
+                    <IconLoader2 className="size-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : navHistory.length === 0 ? (
+                  <div className="mt-4 flex h-40 items-center justify-center">
+                    <p className="text-xs text-muted-foreground">
+                      No NAV data available
+                    </p>
+                  </div>
+                ) : (
+                  <ChartContainer
+                    config={navChartConfig}
+                    className="mt-4 h-40 w-full"
                   >
-                    {p}
-                  </button>
+                    <AreaChart data={navHistory}>
+                      <defs>
+                        <linearGradient
+                          id="navGradient"
+                          x1="0"
+                          y1="0"
+                          x2="0"
+                          y2="1"
+                        >
+                          <stop
+                            offset="0%"
+                            stopColor="var(--color-nav)"
+                            stopOpacity={0.3}
+                          />
+                          <stop
+                            offset="100%"
+                            stopColor="var(--color-nav)"
+                            stopOpacity={0}
+                          />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis
+                        dataKey="month"
+                        tickLine={false}
+                        axisLine={false}
+                        fontSize={10}
+                      />
+                      <YAxis
+                        tickLine={false}
+                        axisLine={false}
+                        fontSize={10}
+                        domain={["dataMin - 2", "dataMax + 2"]}
+                        tickFormatter={(v) => `₹${v}`}
+                      />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Area
+                        dataKey="nav"
+                        type="monotone"
+                        stroke="var(--color-nav)"
+                        fill="url(#navGradient)"
+                        strokeWidth={2}
+                        isAnimationActive={true}
+                        animationDuration={1000}
+                      />
+                    </AreaChart>
+                  </ChartContainer>
+                )}
+
+                <div className="mt-3 flex items-center gap-1 rounded-md bg-muted p-0.5">
+                  {periods.map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => setActivePeriod(p)}
+                      className={cn(
+                        "rounded px-2.5 py-1 text-[0.65rem] font-medium transition-colors",
+                        activePeriod === p
+                          ? "card-shadow bg-background text-foreground"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Returns comparison table */}
+              <div>
+                <div className="grid grid-cols-3 gap-4 text-[0.65rem] font-medium text-muted-foreground">
+                  <span>Period</span>
+                  <span className="text-right">Fund Return</span>
+                  <span className="text-right">Category Avg</span>
+                </div>
+                {(["1Y", "3Y", "5Y"] as const).map((period) => (
+                  <div
+                    key={period}
+                    className="mt-3 grid grid-cols-3 gap-4 text-xs"
+                  >
+                    <span>
+                      {period === "1Y"
+                        ? "1 Year"
+                        : period === "3Y"
+                          ? "3 Years"
+                          : "5 Years"}
+                    </span>
+                    <span className="num-positive text-right font-medium">
+                      {fund.returns[period] >= 0 ? "↑ " : "↓ "}
+                      {fund.returns[period]}%
+                    </span>
+                    <span className="text-right text-muted-foreground">
+                      {fund.categoryAvg[period]}%
+                    </span>
+                  </div>
                 ))}
               </div>
-            </div>
 
-            <Separator />
+              <Separator />
 
-            {/* Returns comparison table */}
-            <div>
-              <div className="grid grid-cols-3 gap-4 text-[0.65rem] font-medium text-muted-foreground">
-                <span>Period</span>
-                <span className="text-right">Fund Return</span>
-                <span className="text-right">Category Avg</span>
-              </div>
-              {(["1Y", "3Y", "5Y"] as const).map((period) => (
-                <div
-                  key={period}
-                  className="mt-3 grid grid-cols-3 gap-4 text-xs"
+              {/* Investment section */}
+              <div>
+                <Tabs value={investTab} onValueChange={setInvestTab}>
+                  <TabsList className="w-full">
+                    <TabsTrigger value="sip" className="flex-1">
+                      Monthly SIP
+                    </TabsTrigger>
+                    <TabsTrigger value="lumpsum" className="flex-1">
+                      Lumpsum
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="sip" className="mt-4">
+                    <div className="space-y-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="sip-amount" className="text-xs">
+                          Investment Amount
+                        </Label>
+                        <div className="relative">
+                          <span className="absolute top-1/2 left-3 -translate-y-1/2 text-xs text-muted-foreground">
+                            ₹
+                          </span>
+                          <Input
+                            id="sip-amount"
+                            type="number"
+                            placeholder={`Min ₹${fund.minSip.toLocaleString("en-IN")}`}
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                            className="pl-7"
+                          />
+                        </div>
+                        <p className="text-[0.6rem] text-muted-foreground">
+                          SIP date: 1st of every month
+                        </p>
+                      </div>
+
+                      {amount && Number(amount) > 0 && (
+                        <Card>
+                          <CardContent className="grid grid-cols-2 gap-3 p-3">
+                            <div>
+                              <p className="text-[0.6rem] text-muted-foreground">
+                                Monthly SIP
+                              </p>
+                              <p className="text-xs font-semibold">
+                                ₹{Number(amount).toLocaleString("en-IN")}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-[0.6rem] text-muted-foreground">
+                                Est. 1Y Value
+                              </p>
+                              <p className="num-positive text-xs font-semibold">
+                                ₹
+                                {Math.round(
+                                  Number(amount) *
+                                    12 *
+                                    (1 + fund.returns["1Y"] / 100 / 2)
+                                ).toLocaleString("en-IN")}
+                              </p>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="lumpsum" className="mt-4">
+                    <div className="space-y-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="lumpsum-amount" className="text-xs">
+                          Investment Amount
+                        </Label>
+                        <div className="relative">
+                          <span className="absolute top-1/2 left-3 -translate-y-1/2 text-xs text-muted-foreground">
+                            ₹
+                          </span>
+                          <Input
+                            id="lumpsum-amount"
+                            type="number"
+                            placeholder={`Min ₹${fund.minLumpsum.toLocaleString("en-IN")}`}
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                            className="pl-7"
+                          />
+                        </div>
+                      </div>
+
+                      {amount && Number(amount) > 0 && (
+                        <Card>
+                          <CardContent className="grid grid-cols-2 gap-3 p-3">
+                            <div>
+                              <p className="text-[0.6rem] text-muted-foreground">
+                                Investment
+                              </p>
+                              <p className="text-xs font-semibold">
+                                ₹{Number(amount).toLocaleString("en-IN")}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-[0.6rem] text-muted-foreground">
+                                Est. 1Y Value
+                              </p>
+                              <p className="num-positive text-xs font-semibold">
+                                ₹
+                                {Math.round(
+                                  Number(amount) *
+                                    (1 + fund.returns["1Y"] / 100)
+                                ).toLocaleString("en-IN")}
+                              </p>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </div>
+                  </TabsContent>
+                </Tabs>
+
+                <Button
+                  className="mt-4 w-full"
+                  size="lg"
+                  disabled={!amount || Number(amount) < minAmount}
+                  onClick={handleInvest}
                 >
-                  <span>
-                    {period === "1Y"
-                      ? "1 Year"
-                      : period === "3Y"
-                        ? "3 Years"
-                        : "5 Years"}
-                  </span>
-                  <span className="text-right font-medium text-emerald-500">
-                    {fund.returns[period]}%
-                  </span>
-                  <span className="text-right text-muted-foreground">
-                    {fund.categoryAvg[period]}%
-                  </span>
-                </div>
-              ))}
+                  {!amount || Number(amount) < minAmount
+                    ? `Min ₹${minAmount.toLocaleString("en-IN")} required`
+                    : investTab === "sip"
+                      ? "Start SIP"
+                      : "Invest Now"}
+                </Button>
+              </div>
             </div>
+          )}
 
-            <Separator />
+          {step === "confirm" && (
+            <div className="flex flex-col gap-6 px-6 pb-6">
+              <h4 className="text-sm font-semibold">Confirm Investment</h4>
 
-            {/* Investment section */}
-            <div>
-              <Tabs
-                value={investTab}
-                onValueChange={setInvestTab}
-              >
-                <TabsList className="w-full">
-                  <TabsTrigger value="sip" className="flex-1">
-                    Monthly SIP
-                  </TabsTrigger>
-                  <TabsTrigger value="lumpsum" className="flex-1">
-                    Lumpsum
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="sip" className="mt-4">
-                  <div className="space-y-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="sip-amount" className="text-xs">
-                        Investment Amount
-                      </Label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                          ₹
-                        </span>
-                        <Input
-                          id="sip-amount"
-                          type="number"
-                          placeholder={`Min ₹${fund.minSip.toLocaleString("en-IN")}`}
-                          value={amount}
-                          onChange={(e) => setAmount(e.target.value)}
-                          className="pl-7"
-                        />
-                      </div>
-                      <p className="text-[0.6rem] text-muted-foreground">
-                        SIP date: 1st of every month
-                      </p>
-                    </div>
-
-                    {amount && Number(amount) > 0 && (
-                      <Card>
-                        <CardContent className="grid grid-cols-2 gap-3 p-3">
-                          <div>
-                            <p className="text-[0.6rem] text-muted-foreground">
-                              Monthly SIP
-                            </p>
-                            <p className="text-xs font-semibold">
-                              ₹{Number(amount).toLocaleString("en-IN")}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-[0.6rem] text-muted-foreground">
-                              Est. 1Y Value
-                            </p>
-                            <p className="text-xs font-semibold text-emerald-500">
-                              ₹
-                              {Math.round(
-                                Number(amount) *
-                                  12 *
-                                  (1 + fund.returns["1Y"] / 100 / 2)
-                              ).toLocaleString("en-IN")}
-                            </p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )}
+              <Card>
+                <CardContent className="space-y-3 p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Fund</span>
+                    <span className="text-xs font-semibold">{fund.name}</span>
                   </div>
-                </TabsContent>
-
-                <TabsContent value="lumpsum" className="mt-4">
-                  <div className="space-y-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="lumpsum-amount" className="text-xs">
-                        Investment Amount
-                      </Label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                          ₹
-                        </span>
-                        <Input
-                          id="lumpsum-amount"
-                          type="number"
-                          placeholder={`Min ₹${fund.minLumpsum.toLocaleString("en-IN")}`}
-                          value={amount}
-                          onChange={(e) => setAmount(e.target.value)}
-                          className="pl-7"
-                        />
-                      </div>
-                    </div>
-
-                    {amount && Number(amount) > 0 && (
-                      <Card>
-                        <CardContent className="grid grid-cols-2 gap-3 p-3">
-                          <div>
-                            <p className="text-[0.6rem] text-muted-foreground">
-                              Investment
-                            </p>
-                            <p className="text-xs font-semibold">
-                              ₹{Number(amount).toLocaleString("en-IN")}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-[0.6rem] text-muted-foreground">
-                              Est. 1Y Value
-                            </p>
-                            <p className="text-xs font-semibold text-emerald-500">
-                              ₹
-                              {Math.round(
-                                Number(amount) * (1 + fund.returns["1Y"] / 100)
-                              ).toLocaleString("en-IN")}
-                            </p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )}
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Type</span>
+                    <span className="text-xs font-semibold">
+                      {investTab === "sip" ? "Monthly SIP" : "Lumpsum"}
+                    </span>
                   </div>
-                </TabsContent>
-              </Tabs>
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">
+                      Amount
+                    </span>
+                    <span className="text-xs font-semibold">
+                      ₹{Number(amount).toLocaleString("en-IN")}
+                      {investTab === "sip" ? "/month" : ""}
+                    </span>
+                  </div>
+                  {investTab === "sip" && (
+                    <>
+                      <Separator />
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">
+                          SIP Date
+                        </span>
+                        <span className="text-xs font-semibold">
+                          1st of every month
+                        </span>
+                      </div>
+                    </>
+                  )}
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">
+                      NAV (approx.)
+                    </span>
+                    <span className="text-xs font-semibold">₹{fund.nav}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">
+                      Est. Units
+                    </span>
+                    <span className="text-xs font-semibold">
+                      {(Number(amount) / fund.nav).toFixed(4)}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
 
-              <Button
-                className="mt-4 w-full"
-                size="lg"
-                disabled={!amount || Number(amount) < minAmount}
-                onClick={handleInvest}
-              >
-                {!amount || Number(amount) < minAmount
-                  ? `Min ₹${minAmount.toLocaleString("en-IN")} required`
-                  : investTab === "sip"
-                    ? "Start SIP"
-                    : "Invest Now"}
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {step === "confirm" && (
-          <div className="flex flex-col gap-6 px-6 pb-6">
-            <h4 className="text-sm font-semibold">Confirm Investment</h4>
-
-            <Card>
-              <CardContent className="space-y-3 p-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">Fund</span>
-                  <span className="text-xs font-semibold">{fund.name}</span>
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">Type</span>
-                  <span className="text-xs font-semibold">
-                    {investTab === "sip" ? "Monthly SIP" : "Lumpsum"}
-                  </span>
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">Amount</span>
-                  <span className="text-xs font-semibold">
-                    ₹{Number(amount).toLocaleString("en-IN")}
-                    {investTab === "sip" ? "/month" : ""}
-                  </span>
-                </div>
-                {investTab === "sip" && (
-                  <>
-                    <Separator />
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">
-                        SIP Date
-                      </span>
-                      <span className="text-xs font-semibold">
-                        1st of every month
-                      </span>
-                    </div>
-                  </>
-                )}
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">
-                    NAV (approx.)
-                  </span>
-                  <span className="text-xs font-semibold">₹{fund.nav}</span>
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">
-                    Est. Units
-                  </span>
-                  <span className="text-xs font-semibold">
-                    {(Number(amount) / fund.nav).toFixed(4)}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-
-            <p className="text-[0.6rem] leading-relaxed text-muted-foreground">
-              By proceeding, you agree to the terms and conditions of {fund.amc}.
-              Mutual fund investments are subject to market risks. Please read
-              all scheme-related documents carefully before investing.
-            </p>
-
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => setStep("details")}
-              >
-                Back
-              </Button>
-              <Button className="flex-1" onClick={handleConfirm} disabled={isSubmitting}>
-                {isSubmitting ? "Processing..." : `Confirm ${investTab === "sip" ? "SIP" : "Investment"}`}
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {step === "success" && (
-          <div className="flex flex-col items-center gap-6 px-6 pb-6 pt-8 text-center">
-            <div className="flex size-16 items-center justify-center rounded-full bg-emerald-500/10 text-3xl">
-              ✓
-            </div>
-            <div>
-              <h4 className="text-lg font-semibold">
-                {investTab === "sip" ? "SIP Created!" : "Investment Successful!"}
-              </h4>
-              <p className="mt-2 text-xs text-muted-foreground">
-                {investTab === "sip"
-                  ? `Your monthly SIP of ₹${Number(amount).toLocaleString("en-IN")} in ${fund.name} has been set up successfully.`
-                  : `₹${Number(amount).toLocaleString("en-IN")} has been invested in ${fund.name}.`}
+              <p className="text-[0.6rem] leading-relaxed text-muted-foreground">
+                By proceeding, you agree to the terms and conditions of{" "}
+                {fund.amc}. Mutual fund investments are subject to market risks.
+                Please read all scheme-related documents carefully before
+                investing.
               </p>
-            </div>
 
-            <Card className="w-full">
-              <CardContent className="space-y-3 p-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">Fund</span>
-                  <span className="text-xs font-semibold">{fund.name}</span>
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">Amount</span>
-                  <span className="text-xs font-semibold text-emerald-500">
-                    ₹{Number(amount).toLocaleString("en-IN")}
-                    {investTab === "sip" ? "/month" : ""}
-                  </span>
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">
-                    Est. Units
-                  </span>
-                  <span className="text-xs font-semibold">
-                    {(Number(amount) / fund.nav).toFixed(4)}
-                  </span>
-                </div>
-                {investTab === "sip" && (
-                  <>
-                    <Separator />
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">
-                        Next SIP Date
-                      </span>
-                      <span className="text-xs font-semibold">1st Apr 2026</span>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-
-            <div className="flex w-full gap-3">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={handleClose}
-              >
-                Back to Explore
-              </Button>
-              <Button
-                className="flex-1"
-                onClick={() => {
-                  setStep("details")
-                  setAmount("")
-                }}
-              >
-                Invest More
-              </Button>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setStep("details")}
+                >
+                  Back
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={handleConfirm}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting
+                    ? "Processing..."
+                    : `Confirm ${investTab === "sip" ? "SIP" : "Investment"}`}
+                </Button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {step === "success" && (
+            <div className="flex flex-col items-center gap-6 px-6 pt-8 pb-6 text-center">
+              <div className="bg-gain flex size-16 items-center justify-center rounded-full text-3xl">
+                ✓
+              </div>
+              <div>
+                <h4 className="text-lg font-semibold">
+                  {investTab === "sip"
+                    ? "SIP Created!"
+                    : "Investment Successful!"}
+                </h4>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {investTab === "sip"
+                    ? `Your monthly SIP of ₹${Number(amount).toLocaleString("en-IN")} in ${fund.name} has been set up successfully.`
+                    : `₹${Number(amount).toLocaleString("en-IN")} has been invested in ${fund.name}.`}
+                </p>
+              </div>
+
+              <Card className="w-full">
+                <CardContent className="space-y-3 p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Fund</span>
+                    <span className="text-xs font-semibold">{fund.name}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">
+                      Amount
+                    </span>
+                    <span className="num-positive text-xs font-semibold">
+                      ₹{Number(amount).toLocaleString("en-IN")}
+                      {investTab === "sip" ? "/month" : ""}
+                    </span>
+                  </div>
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">
+                      Est. Units
+                    </span>
+                    <span className="text-xs font-semibold">
+                      {(Number(amount) / fund.nav).toFixed(4)}
+                    </span>
+                  </div>
+                  {investTab === "sip" && (
+                    <>
+                      <Separator />
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">
+                          Next SIP Date
+                        </span>
+                        <span className="text-xs font-semibold">
+                          1st Apr 2026
+                        </span>
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+
+              <div className="flex w-full gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={handleClose}
+                >
+                  Back to Explore
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={() => {
+                    setStep("details")
+                    setAmount("")
+                  }}
+                >
+                  Invest More
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </SheetContent>
     </Sheet>

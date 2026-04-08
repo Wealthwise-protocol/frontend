@@ -7,7 +7,7 @@ export function CTA() {
 
   return (
     <section className="relative mx-auto max-w-6xl px-4 py-12 text-center sm:px-6 md:py-24">
-      <div className="pointer-events-none absolute inset-0 mx-auto h-40 w-[min(400px,90vw)] rounded-full bg-primary/8 blur-[80px]" />
+      <div className="pointer-events-none absolute inset-0 mx-auto h-40 w-[min(400px,90vw)] bg-primary/8 blur-[80px]" />
       <h2 className="relative text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl">
         Your wealth, <span className="gradient-text">managed wisely.</span>
       </h2>

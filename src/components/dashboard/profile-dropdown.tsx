@@ -22,7 +22,7 @@ export function ProfileDropdown() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Profile menu">
+        <Button variant="ghost" size="icon" aria-label="Account menu">
           {user ? (
             <span className="text-xs font-bold">{initials}</span>
           ) : (

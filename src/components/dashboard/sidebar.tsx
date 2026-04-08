@@ -86,11 +86,11 @@ function SidebarInner({
               key={item.href}
               to={item.href}
               className={cn(
-                "flex items-center rounded-md text-xs font-medium transition-colors",
+                "flex min-h-[44px] items-center text-xs font-medium transition-colors",
                 collapsed ? "justify-center px-0 py-2" : "gap-3 px-3 py-2",
                 isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  ? "border-l-2 border-primary bg-accent text-accent-foreground rounded-md"
+                  : "text-muted-foreground hover:bg-muted transition-colors rounded-md"
               )}
             >
               <item.icon className="size-4 shrink-0" />
@@ -135,24 +135,33 @@ function SidebarInner({
   )
 }
 
+const bottomNavItems = [
+  { label: "Dashboard", icon: IconLayoutDashboard, href: "/dashboard" },
+  { label: "Explore", icon: IconSearch, href: "/dashboard/explore" },
+  { label: "SIPs", icon: IconSettingsAutomation, href: "/dashboard/sip" },
+  { label: "X", icon: IconMessageChatbot, href: "/dashboard/chat" },
+  { label: "Profile", icon: IconUser, href: "/dashboard/profile" },
+]
+
 export function BottomNav() {
   const location = useLocation()
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 flex h-14 items-center justify-around border-t border-border bg-card md:hidden">
-      {navItems.map((item) => {
+    <nav className="fixed inset-x-0 bottom-0 z-50 flex items-center justify-around border-t border-border bg-background/95 backdrop-blur-sm card-shadow pb-4 pt-1 md:hidden">
+      {bottomNavItems.map((item) => {
         const isActive = location.pathname === item.href
         return (
           <Link
             key={item.href}
             to={item.href}
             className={cn(
-              "flex items-center justify-center px-3 py-2 transition-colors",
+              "flex min-h-[44px] min-w-[44px] flex-col items-center justify-center gap-0.5 transition-colors",
               isActive ? "text-primary" : "text-muted-foreground"
             )}
             aria-label={item.label}
           >
             <item.icon className="size-5" />
+            <span className="text-[10px] font-medium">{item.label}</span>
           </Link>
         )
       })}

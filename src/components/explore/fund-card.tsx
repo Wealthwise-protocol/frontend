@@ -5,11 +5,11 @@ import { Button } from "@/components/ui/button"
 import { IconBookmark, IconBookmarkFilled } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
 
-const riskColors: Record<string, string> = {
-  LOW: "border-emerald-500/30 text-emerald-500",
-  MODERATE: "border-yellow-500/30 text-yellow-500",
-  HIGH: "border-orange-500/30 text-orange-500",
-  "VERY HIGH": "border-red-500/30 text-red-500",
+const riskClasses: Record<string, string> = {
+  LOW: "risk-low",
+  MODERATE: "risk-moderate",
+  HIGH: "risk-high",
+  "VERY HIGH": "risk-very-high",
 }
 
 export function FundCard({
@@ -25,14 +25,14 @@ export function FundCard({
 }) {
   return (
     <Card
-      className="cursor-pointer transition-all duration-200 hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5"
+      className="cursor-pointer card-hover"
       onClick={() => onSelect(fund)}
     >
       <CardContent className="p-3.5 sm:p-5">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <h3 className="line-clamp-1 text-xs font-semibold sm:text-sm">{fund.name}</h3>
-            <p className="mt-0.5 text-[0.65rem] text-muted-foreground sm:text-xs">{fund.amc}</p>
+            <h3 className="line-clamp-1 font-semibold text-sm">{fund.name}</h3>
+            <p className="mt-0.5 text-xs text-muted-foreground">{fund.amc}</p>
           </div>
           <button
             className={cn(
@@ -56,15 +56,12 @@ export function FundCard({
         </div>
 
         <div className="mt-2 flex flex-wrap items-center gap-1.5 sm:mt-3 sm:gap-2">
-          <Badge variant="outline" className="text-[0.55rem] sm:text-[0.6rem]">
+          <Badge variant="secondary" className="text-[0.55rem] sm:text-[0.6rem]">
             {fund.category} - {fund.subcategory}
           </Badge>
-          <Badge
-            variant="outline"
-            className={cn("text-[0.55rem] sm:text-[0.6rem]", riskColors[fund.risk])}
-          >
+          <span className={cn("text-[0.55rem] sm:text-[0.6rem]", riskClasses[fund.risk])}>
             {fund.risk} RISK
-          </Badge>
+          </span>
         </div>
 
         <div className="mt-3 grid grid-cols-3 gap-1.5 sm:mt-4 sm:gap-2">
@@ -74,8 +71,8 @@ export function FundCard({
               className="rounded-md border border-border px-1.5 py-1.5 text-center sm:px-2 sm:py-2"
             >
               <p className="text-[0.55rem] text-muted-foreground sm:text-[0.6rem]">{period}</p>
-              <p className="mt-0.5 text-[0.65rem] font-semibold text-emerald-500 sm:text-xs">
-                {fund.returns[period]}%
+              <p className={cn("mt-0.5 text-[0.65rem] font-semibold num sm:text-xs", fund.returns[period] >= 0 ? "num-positive" : "num-negative")}>
+                {fund.returns[period] >= 0 ? "↑ " : "↓ "}{fund.returns[period]}%
               </p>
             </div>
           ))}
@@ -84,7 +81,7 @@ export function FundCard({
         <div className="mt-3 flex items-center justify-between border-t border-border pt-2.5 sm:mt-4 sm:pt-3">
           <div>
             <p className="text-[0.55rem] text-muted-foreground sm:text-[0.6rem]">Min SIP</p>
-            <p className="text-[0.65rem] font-semibold sm:text-xs">
+            <p className="text-[0.65rem] font-semibold num sm:text-xs">
               ₹{fund.minSip.toLocaleString("en-IN")}
             </p>
           </div>

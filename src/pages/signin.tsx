@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
 import { useSignIn } from "@/hooks/use-auth"
+import { getErrorMessage } from "@/lib/error-messages"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,6 +11,9 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import {
   IconEye,
   IconEyeOff,
+  IconLock,
+  IconShield,
+  IconRosetteDiscountCheck,
 } from "@tabler/icons-react"
 import { FadeIn } from "@/components/ui/animated"
 
@@ -20,10 +24,19 @@ export function SignInPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [remember, setRemember] = useState(false)
   const [error, setError] = useState("")
+  const [touched, setTouched] = useState<Record<string, boolean>>({})
+
+  function getFieldError(field: string) {
+    if (!touched[field]) return null
+    if (field === "email" && !email.trim()) return "Email is required"
+    if (field === "password" && !password) return "Password is required"
+    return null
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError("")
+    setTouched({ email: true, password: true })
 
     if (!email.trim()) {
       setError("Email is required")
@@ -38,12 +51,14 @@ export function SignInPage() {
       { email, password },
       {
         onError: (err: unknown) => {
-          const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-          setError(msg || "Invalid email or password")
+          setError(getErrorMessage(err, "Invalid email or password"))
         },
       }
     )
   }
+
+  const emailError = getFieldError("email")
+  const passwordError = getFieldError("password")
 
   return (
     <div className="flex min-h-svh flex-col bg-background">
@@ -70,7 +85,7 @@ export function SignInPage() {
             <CardContent className="p-6">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-xs">
+                  <Label htmlFor="email" className="section-label">
                     Email Address
                   </Label>
                   <Input
@@ -79,13 +94,17 @@ export function SignInPage() {
                     placeholder="arjun@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    onBlur={() => setTouched((t) => ({ ...t, email: true }))}
                     autoComplete="email"
                   />
+                  {emailError && (
+                    <p className="text-xs text-destructive">{emailError}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="password" className="text-xs">
+                    <Label htmlFor="password" className="section-label">
                       Password
                     </Label>
                     <Link
@@ -102,6 +121,7 @@ export function SignInPage() {
                       placeholder="Enter your password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      onBlur={() => setTouched((t) => ({ ...t, password: true }))}
                       autoComplete="current-password"
                       className="pr-10"
                     />
@@ -118,6 +138,9 @@ export function SignInPage() {
                       )}
                     </button>
                   </div>
+                  {passwordError && (
+                    <p className="text-xs text-destructive">{passwordError}</p>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -142,7 +165,22 @@ export function SignInPage() {
             </CardContent>
           </Card>
 
-          <p className="mt-6 text-center text-xs text-muted-foreground">
+          <div className="mt-6 flex items-center justify-center gap-6">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <IconLock className="size-3" />
+              <span>256-bit SSL</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <IconShield className="size-3" />
+              <span>SEBI Registered</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <IconRosetteDiscountCheck className="size-3" />
+              <span>Bank-grade Security</span>
+            </div>
+          </div>
+
+          <p className="mt-4 text-center text-xs text-muted-foreground">
             Don&apos;t have an account?{" "}
             <Link to="/signup" className="font-medium text-primary hover:underline">
               Create account

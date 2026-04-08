@@ -8,8 +8,8 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 import { cn } from "@/lib/utils"
+import { Skeleton } from "@/components/ui/skeleton"
 import { usePortfolio } from "@/hooks/use-portfolio"
-import { IconLoader2 } from "@tabler/icons-react"
 
 const periods = ["1M", "3M", "6M", "1Y", "ALL"] as const
 
@@ -30,15 +30,15 @@ export function PortfolioChart() {
       <CardContent className="p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h3 className="text-sm font-semibold">Portfolio Value Over Time</h3>
-          <div className="flex items-center gap-0.5 self-start rounded-md border border-border p-0.5">
+          <div className="flex items-center gap-0 self-start rounded-md bg-muted p-0.5">
             {periods.map((period) => (
               <button
                 key={period}
                 onClick={() => setActivePeriod(period)}
                 className={cn(
-                  "rounded-sm px-2.5 py-1 text-[0.65rem] font-medium transition-colors",
+                  "rounded px-2.5 py-1 text-[0.65rem] font-medium transition-colors",
                   activePeriod === period
-                    ? "bg-primary text-primary-foreground"
+                    ? "bg-background text-foreground card-shadow"
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
@@ -49,8 +49,8 @@ export function PortfolioChart() {
         </div>
 
         {isLoading ? (
-          <div className="mt-6 flex h-64 items-center justify-center">
-            <IconLoader2 className="size-6 animate-spin text-muted-foreground" />
+          <div className="mt-6 h-64">
+            <Skeleton className="h-full w-full" />
           </div>
         ) : isError ? (
           <div className="mt-6 flex h-64 items-center justify-center">
@@ -62,6 +62,10 @@ export function PortfolioChart() {
             <p className="text-xs text-muted-foreground">Start investing to see your portfolio grow</p>
           </div>
         ) : (
+        <>
+        <p className="sr-only">
+          Bar chart showing portfolio value over time. Current value: ₹{portfolioHistory[portfolioHistory.length - 1]?.value?.toLocaleString("en-IN") ?? 0}. Started at ₹{portfolioHistory[0]?.value?.toLocaleString("en-IN") ?? 0}.
+        </p>
         <ChartContainer config={chartConfig} className="mt-6 h-64 w-full">
           <BarChart data={portfolioHistory} barCategoryGap="20%">
             <CartesianGrid
@@ -92,10 +96,13 @@ export function PortfolioChart() {
             <Bar
               dataKey="value"
               fill="var(--color-value)"
-              radius={[3, 3, 0, 0]}
+              radius={[4, 4, 0, 0]}
+              isAnimationActive={true}
+              animationDuration={1000}
             />
           </BarChart>
         </ChartContainer>
+        </>
         )}
       </CardContent>
     </Card>

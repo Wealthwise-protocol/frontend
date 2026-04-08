@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Link } from "react-router-dom"
 import { toast } from "sonner"
 import { authService } from "@/services/auth"
+import { getErrorMessage } from "@/lib/error-messages"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -35,8 +36,7 @@ export function ForgotPasswordPage() {
       setSent(true)
       toast.success("Reset link sent to your email")
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      setError(msg || "Something went wrong. Please try again.")
+      setError(getErrorMessage(err))
     } finally {
       setLoading(false)
     }
@@ -70,7 +70,7 @@ export function ForgotPasswordPage() {
                 <CardContent className="p-6">
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="email" className="text-xs">
+                      <Label htmlFor="email" className="section-label">
                         Email Address
                       </Label>
                       <Input

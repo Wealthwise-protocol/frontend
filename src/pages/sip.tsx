@@ -44,9 +44,11 @@ import {
   IconChevronDown,
   IconChevronUp,
   IconCheck,
-  IconLoader2,
+  IconSettingsAutomation,
 } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
+import { getErrorMessage } from "@/lib/error-messages"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   FadeIn,
@@ -55,11 +57,7 @@ import {
   Collapsible,
   CountUp,
 } from "@/components/ui/animated"
-
-
-function formatCurrency(n: number) {
-  return `₹${n.toLocaleString("en-IN")}`
-}
+import { formatCurrency } from "@/lib/formatters"
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr)
@@ -105,17 +103,17 @@ function SIPRow({
         <TableCell className="text-right text-xs">
           {formatCurrency(sip.totalInvested)}
         </TableCell>
-        <TableCell className="text-right text-xs font-medium text-emerald-500">
+        <TableCell className="text-right text-xs font-medium text-gain">
           {formatCurrency(sip.currentValue)}
         </TableCell>
         <TableCell>
           <Badge
             variant="outline"
             className={cn(
-              "text-[0.6rem]",
+              " text-[0.6rem]",
               sip.status === "ACTIVE"
-                ? "border-emerald-500/30 text-emerald-500"
-                : "border-orange-500/30 text-orange-500"
+                ? "status-active"
+                : "status-paused"
             )}
           >
             {sip.status}
@@ -128,6 +126,7 @@ function SIPRow({
                 <Button
                   variant="ghost"
                   size="icon-xs"
+                  className="card-hover"
                   aria-label={isPaused ? "Resume SIP" : "Pause SIP"}
                   onClick={() => onTogglePause(sip.id)}
                 >
@@ -145,6 +144,7 @@ function SIPRow({
                 <Button
                   variant="ghost"
                   size="icon-xs"
+                  className="card-hover"
                   aria-label="Edit SIP"
                   onClick={() => onEdit(sip)}
                 >
@@ -158,6 +158,7 @@ function SIPRow({
                 <Button
                   variant="ghost"
                   size="icon-xs"
+                  className="card-hover"
                   aria-label="Cancel SIP"
                   onClick={() => onCancel(sip.id)}
                 >
@@ -188,10 +189,10 @@ function SIPRow({
                 <Badge
                   variant="outline"
                   className={cn(
-                    "text-[0.6rem]",
+                    " text-[0.6rem]",
                     sip.status === "ACTIVE"
-                      ? "border-emerald-500/30 text-emerald-500"
-                      : "border-orange-500/30 text-orange-500"
+                      ? "border-blue-900 bg-blue-100 text-blue-900"
+                      : "border-gray-900 bg-gray-100 text-gray-900"
                   )}
                 >
                   {sip.status}
@@ -213,7 +214,7 @@ function SIPRow({
               </div>
               <div className="text-right">
                 <span className="text-muted-foreground">Current</span>
-                <p className="text-xs font-medium text-emerald-500">
+                <p className="text-xs font-medium text-gain">
                   {formatCurrency(sip.currentValue)}
                 </p>
               </div>
@@ -228,7 +229,7 @@ function SIPRow({
             </div>
 
             <div className="mt-3 flex gap-2" onClick={(e) => e.stopPropagation()}>
-              <Button variant="outline" size="xs" onClick={() => onTogglePause(sip.id)}>
+              <Button variant="outline" size="xs" className="" onClick={() => onTogglePause(sip.id)}>
                 {isPaused ? (
                   <IconPlayerPlay className="mr-1 size-3" />
                 ) : (
@@ -236,11 +237,11 @@ function SIPRow({
                 )}
                 {isPaused ? "Resume" : "Pause"}
               </Button>
-              <Button variant="outline" size="xs" onClick={() => onEdit(sip)}>
+              <Button variant="outline" size="xs" className="" onClick={() => onEdit(sip)}>
                 <IconPencil className="mr-1 size-3" />
                 Edit
               </Button>
-              <Button variant="outline" size="xs" onClick={() => onCancel(sip.id)}>
+              <Button variant="outline" size="xs" className="" onClick={() => onCancel(sip.id)}>
                 <IconX className="mr-1 size-3" />
                 Cancel
               </Button>
@@ -253,9 +254,9 @@ function SIPRow({
       <tr>
         <td colSpan={8}>
           <Collapsible open={expanded}>
-            <div className="border-b border-border bg-muted/30 px-4 py-4 md:px-8">
+            <div className="border-b border-border bg-muted px-4 py-4 md:px-8">
               <div className="flex items-center gap-2">
-                <div className="h-full w-0.5 self-stretch rounded bg-primary" />
+                <div className="h-full w-0.5 self-stretch bg-primary" />
                 <h4 className="text-[0.65rem] font-semibold tracking-wider text-muted-foreground">
                   RECENT INSTALLMENTS
                 </h4>
@@ -286,7 +287,7 @@ function SIPRow({
                         <td className="py-2 text-right text-xs">
                           {(inst.units ?? 0).toFixed(3)}
                         </td>
-                        <td className={`py-2 text-right text-xs font-medium ${inst.status === "FAILED" ? "text-red-500" : inst.status === "PENDING" ? "text-orange-500" : "text-emerald-500"}`}>
+                        <td className={`py-2 text-right text-xs font-medium ${inst.status === "FAILED" ? "text-red-500" : inst.status === "PENDING" ? "text-orange-500" : "text-gain"}`}>
                           {formatStatus(inst.status)}
                         </td>
                       </tr>
@@ -304,7 +305,7 @@ function SIPRow({
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium">{formatDate(inst.installmentDate)}</span>
-                      <span className={`text-xs font-medium ${inst.status === "FAILED" ? "text-red-500" : inst.status === "PENDING" ? "text-orange-500" : "text-emerald-500"}`}>
+                      <span className={`text-xs font-medium ${inst.status === "FAILED" ? "text-red-500" : inst.status === "PENDING" ? "text-orange-500" : "text-gain"}`}>
                         {formatStatus(inst.status)}
                       </span>
                     </div>
@@ -338,6 +339,8 @@ export function SipPage() {
   const { data: rawSips = [], isLoading, isError } = useQuery({
     queryKey: ["sips"],
     queryFn: fetchSips,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   })
 
   const sipList = useMemo(
@@ -383,8 +386,7 @@ export function SipPage() {
     },
     onError: (err, _sip, context) => {
       queryClient.setQueryData(["sips"], context?.previous)
-      const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      toast.error(message || "Failed to update SIP status")
+      toast.error(getErrorMessage(err, "Failed to update SIP status"))
     },
     onSuccess: (_data, sip) => {
       toast.success(sip.status === "ACTIVE" ? "SIP paused" : "SIP resumed")
@@ -407,8 +409,7 @@ export function SipPage() {
     },
     onError: (err, _vars, context) => {
       queryClient.setQueryData(["sips"], context?.previous)
-      const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      toast.error(message || "Failed to update SIP amount")
+      toast.error(getErrorMessage(err, "Failed to update SIP amount"))
     },
     onSuccess: () => {
       toast.success("SIP amount updated")
@@ -430,8 +431,7 @@ export function SipPage() {
     },
     onError: (err, _sipId, context) => {
       queryClient.setQueryData(["sips"], context?.previous)
-      const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      toast.error(message || "Failed to cancel SIP")
+      toast.error(getErrorMessage(err, "Failed to cancel SIP"))
     },
     onSuccess: () => {
       toast.success("SIP cancelled")
@@ -485,7 +485,7 @@ export function SipPage() {
       <FadeIn>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-2xl font-bold tracking-tight">SIP Management</h1>
-          <Button size="sm" asChild>
+          <Button size="sm" className="" asChild>
             <Link to="/dashboard/explore">
               <IconPlus className="mr-1 size-3.5" />
               Start New SIP
@@ -494,12 +494,36 @@ export function SipPage() {
         </div>
       </FadeIn>
 
-      {/* Loading state */}
+      {/* Loading state — skeleton SIP cards */}
       {isLoading && (
-        <div className="mt-12 flex flex-col items-center gap-2">
-          <IconLoader2 className="size-6 animate-spin text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">Loading SIPs...</p>
-        </div>
+        <>
+          <div className="mt-6 grid gap-4 sm:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Card key={i} className="card-shadow stat-card" style={{ animation: "fade-in-up 0.3s ease-out both", animationDelay: `${i * 50}ms` }}>
+                <CardContent className="p-5">
+                  <Skeleton className="h-3 w-28" />
+                  <Skeleton className="mt-4 h-7 w-24" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          <div className="mt-6">
+            <Card className="card-shadow">
+              <CardContent className="p-0">
+                <div className="space-y-0">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="flex items-center gap-4 border-b border-border p-4" style={{ animation: "fade-in-up 0.3s ease-out both", animationDelay: `${(i + 3) * 50}ms` }}>
+                      <Skeleton className="h-4 w-40 flex-1" />
+                      <Skeleton className="h-4 w-16" />
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-5 w-14 rounded-full" />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </>
       )}
 
       {/* Error state */}
@@ -514,24 +538,24 @@ export function SipPage() {
       <>
       <StaggerContainer className="mt-6 grid gap-4 sm:grid-cols-3">
         <StaggerItem>
-          <Card>
+          <Card className="card-shadow border-l-4 border-l-primary">
             <CardContent className="p-5">
-              <p className="text-[0.65rem] font-medium tracking-wider text-muted-foreground">
+              <p className="section-label">
                 TOTAL ACTIVE SIPS
               </p>
-              <p className="mt-2 text-2xl font-bold">
+              <p className="mt-2 text-2xl font-bold num">
                 <CountUp value={totalActive} />
               </p>
             </CardContent>
           </Card>
         </StaggerItem>
         <StaggerItem>
-          <Card>
+          <Card className="card-shadow border-l-4 border-l-primary">
             <CardContent className="p-5">
-              <p className="text-[0.65rem] font-medium tracking-wider text-muted-foreground">
+              <p className="section-label">
                 TOTAL MONTHLY DEBIT
               </p>
-              <p className="mt-2 text-2xl font-bold">
+              <p className="mt-2 text-2xl font-bold num">
                 <CountUp
                   value={totalMonthly}
                   prefix="₹"
@@ -542,12 +566,12 @@ export function SipPage() {
           </Card>
         </StaggerItem>
         <StaggerItem>
-          <Card>
+          <Card className="card-shadow border-l-4 border-l-primary">
             <CardContent className="p-5">
-              <p className="text-[0.65rem] font-medium tracking-wider text-muted-foreground">
+              <p className="section-label">
                 TOTAL SIP INVESTED
               </p>
-              <p className="mt-2 text-2xl font-bold">
+              <p className="mt-2 text-2xl font-bold num">
                 <CountUp
                   value={totalInvested}
                   prefix="₹"
@@ -561,7 +585,7 @@ export function SipPage() {
 
       {/* SIP table */}
       <FadeIn delay={0.3} className="mt-6">
-        <Card>
+        <Card className="card-shadow">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <Table>
@@ -605,16 +629,22 @@ export function SipPage() {
                   ))}
                   {sipList.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={8} className="py-12 text-center">
-                        <p className="text-sm text-muted-foreground">
-                          No active SIPs. Start a new SIP to begin investing.
-                        </p>
-                        <Button size="sm" className="mt-4" asChild>
-                          <Link to="/dashboard/explore">
-                            <IconPlus className="mr-1 size-3.5" />
-                            Start New SIP
-                          </Link>
-                        </Button>
+                      <TableCell colSpan={8}>
+                        <div className="empty-state mx-4 my-6 flex flex-col items-center gap-3 p-12 text-center">
+                          <IconSettingsAutomation className="size-8 text-muted-foreground" />
+                          <div>
+                            <p className="font-semibold text-foreground">No active SIPs</p>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                              Set up a SIP to invest a fixed amount every month automatically.
+                            </p>
+                          </div>
+                          <Button size="sm" className="mt-3" asChild>
+                            <Link to="/dashboard/explore">
+                              <IconPlus className="mr-1 size-3.5" />
+                              Start your first SIP
+                            </Link>
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   )}
@@ -688,7 +718,7 @@ export function SipPage() {
                     <p className="text-xs text-destructive">Minimum SIP amount is ₹100</p>
                   )}
                 </div>
-                <div className="rounded-md border border-border bg-muted/30 p-3">
+                <div className="rounded-md border border-border bg-muted p-3">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-muted-foreground">Current Amount</span>
                     <span>{formatCurrency(editTarget?.monthlyAmt ?? 0)}</span>
@@ -717,8 +747,8 @@ export function SipPage() {
             </>
           ) : (
             <div className="flex flex-col items-center py-8">
-              <div className="flex size-14 items-center justify-center rounded-full bg-emerald-500/10">
-                <IconCheck className="size-7 text-emerald-500" />
+              <div className="flex size-14 items-center justify-center rounded-full bg-gain">
+                <IconCheck className="size-7 text-gain" />
               </div>
               <h3 className="mt-4 text-sm font-semibold">SIP Updated</h3>
               <p className="mt-1 text-center text-xs text-muted-foreground">
@@ -734,15 +764,20 @@ export function SipPage() {
       <AlertDialog open={!!cancelTargetId} onOpenChange={() => setCancelTargetId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Cancel SIP?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently cancel your SIP for{" "}
-              <span className="font-medium text-foreground">{cancelTarget?.fundName}</span>.
-              Your existing investments will remain intact, but no further installments will be
-              debited. This action cannot be undone.
+            <AlertDialogTitle>
+              Cancel {cancelTarget?.fundName} SIP?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <span className="block">
+                You&apos;ll stop investing {formatCurrency(cancelTarget?.monthlyAmt ?? 0)}/month.
+              </span>
+              <span className="block">
+                Your existing {formatCurrency(cancelTarget?.totalInvested ?? 0)} investment stays
+                untouched and continues to grow.
+              </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="rounded-md border border-border bg-muted/30 p-3">
+          <div className="rounded-md border border-border bg-muted p-3">
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div>
                 <span className="text-muted-foreground">Monthly Amount</span>
@@ -754,7 +789,7 @@ export function SipPage() {
               </div>
               <div>
                 <span className="text-muted-foreground">Current Value</span>
-                <p className="font-medium text-emerald-500">
+                <p className="font-medium text-gain">
                   {formatCurrency(cancelTarget?.currentValue ?? 0)}
                 </p>
               </div>
@@ -765,13 +800,15 @@ export function SipPage() {
             </div>
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel>Keep SIP</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmCancel}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Cancel SIP
+            <AlertDialogAction onClick={() => setCancelTargetId(null)}>
+              Keep SIP
             </AlertDialogAction>
+            <AlertDialogCancel
+              onClick={confirmCancel}
+              className="bg-destructive/10 text-destructive hover:bg-destructive/20"
+            >
+              Yes, cancel SIP
+            </AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -15,8 +15,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { IconShieldCheck, IconAlertTriangle } from "@tabler/icons-react"
+import { IconShieldCheck, IconAlertTriangle, IconClock } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
+import { getErrorMessage } from "@/lib/error-messages"
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/animated"
 import { useAuthStore } from "@/stores/auth-store"
 import { authService } from "@/services/auth"
@@ -61,6 +62,26 @@ export function ProfilePage() {
 
   const initials = `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`
 
+  const lastLogin = localStorage.getItem("ww-last-login")
+  const lastLoginFormatted = lastLogin
+    ? new Date(lastLogin).toLocaleString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : null
+
+  function getBrowserName() {
+    const ua = navigator.userAgent
+    if (ua.includes("Firefox")) return "Firefox"
+    if (ua.includes("Edg")) return "Edge"
+    if (ua.includes("Chrome")) return "Chrome"
+    if (ua.includes("Safari")) return "Safari"
+    return "Unknown"
+  }
+
   return (
     <>
       <FadeIn>
@@ -71,7 +92,7 @@ export function ProfilePage() {
         {/* Left column */}
         <StaggerContainer className="flex flex-col gap-6">
           {/* Profile header card */}
-          <StaggerItem><Card>
+          <StaggerItem><Card className="card-shadow">
             <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-4">
                 <div className="flex size-14 shrink-0 items-center justify-center rounded-full bg-primary text-lg font-bold text-primary-foreground">
@@ -90,7 +111,7 @@ export function ProfilePage() {
               {user.kycVerified ? (
                 <Badge
                   variant="outline"
-                  className="w-fit gap-1 border-emerald-500/30 text-emerald-500"
+                  className="w-fit gap-1 bg-gain"
                 >
                   <IconShieldCheck className="size-3" />
                   KYC Verified
@@ -98,7 +119,7 @@ export function ProfilePage() {
               ) : (
                 <Badge
                   variant="outline"
-                  className="w-fit gap-1 border-yellow-500/30 text-yellow-500"
+                  className="w-fit gap-1 bg-warning"
                 >
                   KYC Pending
                 </Badge>
@@ -106,8 +127,20 @@ export function ProfilePage() {
             </CardContent>
           </Card></StaggerItem>
 
+          {/* Last session */}
+          {lastLoginFormatted && (
+            <StaggerItem>
+              <div className="flex items-center gap-2 rounded-md border border-border bg-muted/50 px-4 py-2.5">
+                <IconClock className="size-3.5 shrink-0 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground">
+                  Last session: {lastLoginFormatted} &bull; {getBrowserName()}
+                </p>
+              </div>
+            </StaggerItem>
+          )}
+
           {/* Edit profile card */}
-          <StaggerItem><Card>
+          <StaggerItem><Card className="card-shadow">
             <CardContent className="p-5">
               <h3 className="text-sm font-semibold">Edit Profile</h3>
               <Separator className="mt-3 mb-5" />
@@ -147,7 +180,7 @@ export function ProfilePage() {
               </div>
 
               <Button
-                className="mt-5"
+                className=" mt-5"
                 size="sm"
                 onClick={async () => {
                   try {
@@ -155,8 +188,7 @@ export function ProfilePage() {
                     updateProfile(updated)
                     toast.success("Profile updated")
                   } catch (err: unknown) {
-                    const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-                    toast.error(msg || "Failed to update profile")
+                    toast.error(getErrorMessage(err, "Failed to update profile"))
                   }
                 }}
               >
@@ -169,7 +201,7 @@ export function ProfilePage() {
         {/* Right column */}
         <StaggerContainer className="flex flex-col gap-6">
           {/* Security card */}
-          <StaggerItem><Card>
+          <StaggerItem><Card className="card-shadow">
             <CardContent className="p-5">
               <h3 className="text-sm font-semibold">Security</h3>
               <Separator className="mt-3 mb-5" />
@@ -204,7 +236,7 @@ export function ProfilePage() {
                           <div
                             key={i}
                             className={cn(
-                              "h-1 flex-1 rounded-full transition-colors",
+                              "h-1 flex-1 transition-colors",
                               i < strength
                                 ? strengthColors[strength - 1]
                                 : "bg-muted"
@@ -244,7 +276,7 @@ export function ProfilePage() {
               </div>
 
               <Button
-                className="mt-5"
+                className=" mt-5"
                 size="sm"
                 onClick={async () => {
                   try {
@@ -254,8 +286,7 @@ export function ProfilePage() {
                     setNewPassword("")
                     setConfirmPassword("")
                   } catch (err: unknown) {
-                    const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-                    toast.error(msg || "Failed to update password")
+                    toast.error(getErrorMessage(err, "Failed to update password"))
                   }
                 }}
               >
@@ -265,7 +296,7 @@ export function ProfilePage() {
           </Card></StaggerItem>
 
           {/* Danger zone */}
-          <StaggerItem><Card className="border-destructive/30">
+          <StaggerItem><Card className="card-shadow border border-destructive/30">
             <CardContent className="p-5">
               <h3 className="text-sm font-semibold text-destructive">
                 Danger Zone
@@ -283,7 +314,7 @@ export function ProfilePage() {
                 if (!open) setDeleteConfirmation("")
               }}>
                 <DialogTrigger asChild>
-                  <Button variant="destructive" size="sm" className="mt-4">
+                  <Button variant="destructive" size="sm" className=" mt-4">
                     Delete Account
                   </Button>
                 </DialogTrigger>
@@ -291,17 +322,17 @@ export function ProfilePage() {
                   <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 text-destructive">
                       <IconAlertTriangle className="size-5" />
-                      Delete your account
+                      Delete your account?
                     </DialogTitle>
                     <DialogDescription className="pt-2 text-sm leading-relaxed">
                       This action is <span className="font-semibold text-foreground">irreversible</span>.
-                      This will permanently delete your account, all your holdings,
-                      SIPs, transactions, and remove all associated data.
+                      All your holdings, SIPs, and transaction history will be permanently removed.
+                      Your invested funds will need to be redeemed separately.
                     </DialogDescription>
                   </DialogHeader>
 
                   <div className="space-y-3 pt-2">
-                    <div className="rounded-md border border-destructive/20 bg-destructive/5 p-3">
+                    <div className="rounded-md border border-destructive/30 bg-muted p-3">
                       <p className="text-xs text-muted-foreground">
                         To confirm, type{" "}
                         <span className="font-mono font-semibold text-foreground">
@@ -310,7 +341,9 @@ export function ProfilePage() {
                         below:
                       </p>
                     </div>
+                    <label htmlFor="delete-confirm" className="sr-only">Type &quot;delete my account&quot; to confirm</label>
                     <Input
+                      id="delete-confirm"
                       value={deleteConfirmation}
                       onChange={(e) => setDeleteConfirmation(e.target.value)}
                       placeholder="delete my account"
@@ -323,6 +356,7 @@ export function ProfilePage() {
                     <Button
                       variant="outline"
                       size="sm"
+                      className=""
                       onClick={() => setDeleteDialogOpen(false)}
                     >
                       Cancel
@@ -330,6 +364,7 @@ export function ProfilePage() {
                     <Button
                       variant="destructive"
                       size="sm"
+                      className=""
                       disabled={deleteConfirmation !== "delete my account" || deleting}
                       onClick={async () => {
                         setDeleting(true)
@@ -339,8 +374,7 @@ export function ProfilePage() {
                           navigate("/")
                           toast.success("Your account has been deleted")
                         } catch (err: unknown) {
-                          const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-                          toast.error(msg || "Failed to delete account")
+                          toast.error(getErrorMessage(err, "Failed to delete account"))
                         } finally {
                           setDeleting(false)
                         }
