@@ -1,0 +1,59 @@
+name: Deploy Frontend to Azure VM
+
+on:
+  push:
+    branches:
+      - main
+      - release
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+
+      - name: Set deployment target
+        id: target
+        run: |
+          if [ "${{ github.ref_name }}" == "release" ]; then
+            echo "env=production" >> $GITHUB_OUTPUT
+            echo "host=${{ secrets.VM_HOST_PROD }}" >> $GITHUB_OUTPUT
+          else
+            echo "env=staging" >> $GITHUB_OUTPUT
+            echo "host=${{ secrets.VM_HOST_STAGING }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Deploy to VM
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ steps.target.outputs.host }}
+          username: ${{ secrets.VM_USERNAME }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          source: "dist/*"
+          target: "/var/www/wealthwise"
+          strip_components: 1
+          rm: true
+
+      - name: Reload Nginx
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ steps.target.outputs.host }}
+          username: ${{ secrets.VM_USERNAME }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: sudo systemctl reload nginx
