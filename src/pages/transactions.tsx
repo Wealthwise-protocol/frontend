@@ -11,8 +11,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { IconChevronDown, IconChevronUp, IconLoader2 } from "@tabler/icons-react"
+import { IconChevronDown, IconChevronUp, IconReceipt } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
+import { Skeleton } from "@/components/ui/skeleton"
+import { formatCurrency } from "@/lib/formatters"
 import {
   FadeIn,
   StaggerContainer,
@@ -24,19 +26,15 @@ import type { Transaction, TransactionType, TransactionStatus } from "@/types"
 const typeFilters: ("All" | TransactionType)[] = ["All", "SIP", "Lumpsum", "Redeem"]
 
 const statusBadge: Record<TransactionStatus, string> = {
-  Success: "border-emerald-500/30 text-emerald-500",
-  Processing: "border-yellow-500/30 text-yellow-500",
-  Failed: "border-red-500/30 text-red-500",
+  Success: "bg-gain",
+  Processing: "bg-warning",
+  Failed: "bg-loss",
 }
 
 const typeBadge: Record<TransactionType, string> = {
-  SIP: "border-blue-500/30 text-blue-500",
-  Lumpsum: "border-violet-500/30 text-violet-500",
-  Redeem: "border-orange-500/30 text-orange-500",
-}
-
-function formatCurrency(n: number) {
-  return `₹${n.toLocaleString("en-IN")}`
+  SIP: "bg-secondary text-secondary-foreground",
+  Lumpsum: "bg-secondary text-secondary-foreground",
+  Redeem: "bg-warning",
 }
 
 function formatDate(dateStr: string) {
@@ -48,6 +46,8 @@ export function TransactionsPage() {
   const { data: transactions = [], isLoading, isError } = useQuery({
     queryKey: ["transactions"],
     queryFn: fetchTransactions,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   })
   const [activeType, setActiveType] = useState<"All" | TransactionType>("All")
   const [sortAsc, setSortAsc] = useState(false)
@@ -80,10 +80,33 @@ export function TransactionsPage() {
       </FadeIn>
 
       {isLoading && (
-        <div className="mt-12 flex flex-col items-center gap-2">
-          <IconLoader2 className="size-6 animate-spin text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">Loading transactions...</p>
-        </div>
+        <>
+          <div className="mt-6 grid gap-4 sm:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Card key={i} className="card-shadow border-l-4 border-l-primary" style={{ animation: "fade-in-up 0.3s ease-out both", animationDelay: `${i * 50}ms` }}>
+                <CardContent className="p-5">
+                  <Skeleton className="h-3 w-28" />
+                  <Skeleton className="mt-4 h-7 w-24" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          <div className="mt-6">
+            <Card className="card-shadow">
+              <CardContent className="p-0">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-4 border-b border-border p-4" style={{ animation: "fade-in-up 0.3s ease-out both", animationDelay: `${(i + 3) * 50}ms` }}>
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-4 w-32 flex-1" />
+                    <Skeleton className="h-5 w-12 rounded-full" />
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-5 w-14 rounded-full" />
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        </>
       )}
 
       {isError && (
@@ -97,12 +120,12 @@ export function TransactionsPage() {
       {/* Stat cards */}
       <StaggerContainer className="mt-6 grid gap-4 sm:grid-cols-3">
         <StaggerItem>
-          <Card>
+          <Card className="card-shadow border-l-4 border-l-primary">
             <CardContent className="p-5">
-              <p className="text-[0.65rem] font-medium tracking-wider text-muted-foreground">
+              <p className="section-label">
                 TOTAL INVESTED
               </p>
-              <p className="mt-2 text-2xl font-bold">
+              <p className="mt-2 text-2xl font-bold num">
                 <CountUp
                   value={totalInvested}
                   prefix="₹"
@@ -113,12 +136,12 @@ export function TransactionsPage() {
           </Card>
         </StaggerItem>
         <StaggerItem>
-          <Card>
+          <Card className="card-shadow border-l-4 border-l-primary">
             <CardContent className="p-5">
-              <p className="text-[0.65rem] font-medium tracking-wider text-muted-foreground">
+              <p className="section-label">
                 TOTAL REDEEMED
               </p>
-              <p className="mt-2 text-2xl font-bold">
+              <p className="mt-2 text-2xl font-bold num">
                 <CountUp
                   value={totalRedeemed}
                   prefix="₹"
@@ -129,12 +152,12 @@ export function TransactionsPage() {
           </Card>
         </StaggerItem>
         <StaggerItem>
-          <Card>
+          <Card className="card-shadow border-l-4 border-l-primary">
             <CardContent className="p-5">
-              <p className="text-[0.65rem] font-medium tracking-wider text-muted-foreground">
+              <p className="section-label">
                 TOTAL ORDERS
               </p>
-              <p className="mt-2 text-2xl font-bold">
+              <p className="mt-2 text-2xl font-bold num">
                 <CountUp value={totalTransactions} />
               </p>
             </CardContent>
@@ -149,10 +172,10 @@ export function TransactionsPage() {
             key={t}
             onClick={() => setActiveType(t)}
             className={cn(
-              "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+              "rounded-md border border-border px-3 py-1.5 text-xs font-medium transition-colors card-hover",
               activeType === t
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             {t}
@@ -161,7 +184,7 @@ export function TransactionsPage() {
 
         <button
           onClick={() => setSortAsc((v) => !v)}
-          className="ml-auto flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+          className="ml-auto flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors card-hover hover:text-foreground"
         >
           Date
           {sortAsc ? (
@@ -179,7 +202,7 @@ export function TransactionsPage() {
 
       {/* Transactions table */}
       <FadeIn delay={0.25} className="mt-4">
-        <Card>
+        <Card className="card-shadow">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <Table>
@@ -214,10 +237,16 @@ export function TransactionsPage() {
                   ))}
                   {filtered.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={7} className="py-12 text-center">
-                        <p className="text-sm text-muted-foreground">
-                          No transactions found.
-                        </p>
+                      <TableCell colSpan={7}>
+                        <div className="empty-state mx-4 my-6 flex flex-col items-center gap-3 p-12 text-center">
+                          <IconReceipt className="size-8 text-muted-foreground" />
+                          <div>
+                            <p className="font-semibold text-foreground">No transactions yet</p>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                              Your investment history will appear here.
+                            </p>
+                          </div>
+                        </div>
                       </TableCell>
                     </TableRow>
                   )}
@@ -243,7 +272,7 @@ function TransactionRow({ tx }: { tx: Transaction }) {
         <TableCell>
           <Badge
             variant="outline"
-            className={cn("text-[0.6rem]", typeBadge[tx.type])}
+            className={cn(" text-[0.6rem]", typeBadge[tx.type])}
           >
             {tx.type}
           </Badge>
@@ -259,7 +288,7 @@ function TransactionRow({ tx }: { tx: Transaction }) {
         <TableCell>
           <Badge
             variant="outline"
-            className={cn("text-[0.6rem]", statusBadge[tx.status])}
+            className={cn(" text-[0.6rem]", statusBadge[tx.status])}
           >
             {tx.status}
           </Badge>
@@ -269,7 +298,7 @@ function TransactionRow({ tx }: { tx: Transaction }) {
       {/* Mobile card */}
       <tr className="md:hidden">
         <td colSpan={7}>
-          <div className="border-b border-border p-4">
+          <div className="border-b rounded-md border border-border p-4">
             <div className="flex items-start justify-between">
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-semibold">{tx.fundName}</p>
@@ -280,13 +309,13 @@ function TransactionRow({ tx }: { tx: Transaction }) {
               <div className="flex items-center gap-2">
                 <Badge
                   variant="outline"
-                  className={cn("text-[0.6rem]", typeBadge[tx.type])}
+                  className={cn(" text-[0.6rem]", typeBadge[tx.type])}
                 >
                   {tx.type}
                 </Badge>
                 <Badge
                   variant="outline"
-                  className={cn("text-[0.6rem]", statusBadge[tx.status])}
+                  className={cn(" text-[0.6rem]", statusBadge[tx.status])}
                 >
                   {tx.status}
                 </Badge>

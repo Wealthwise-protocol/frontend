@@ -25,6 +25,8 @@ export function usePortfolio(period?: string) {
   const query = useQuery({
     queryKey: ["portfolio", period],
     queryFn: () => fetchPortfolioDetails(period),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   })
 
   const data = useMemo<TransformedPortfolio | null>(() => {

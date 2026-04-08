@@ -9,7 +9,7 @@ export function Hero() {
   return (
     <section className="relative mx-auto max-w-6xl overflow-hidden px-4 pt-16 pb-12 sm:px-6 md:pt-32 md:pb-24">
       {/* Ambient glow */}
-      <div className="pointer-events-none absolute -top-32 left-1/2 h-64 w-[min(600px,100vw)] -translate-x-1/2 rounded-full bg-primary/10 blur-[100px]" />
+      <div className="pointer-events-none absolute -top-32 left-1/2 h-64 w-[min(600px,100vw)] -translate-x-1/2 bg-primary/10 blur-[100px]" />
       <div className="relative max-w-2xl">
         <h1 className="text-3xl font-bold leading-tight tracking-tight sm:text-4xl md:text-5xl lg:text-6xl">
           Invest in mutual funds.{" "}

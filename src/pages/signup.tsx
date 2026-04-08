@@ -25,8 +25,12 @@ import {
   IconEyeOff,
   IconCheck,
   IconChevronDown,
+  IconLock,
+  IconShield,
+  IconRosetteDiscountCheck,
 } from "@tabler/icons-react"
 import { cn } from "@/lib/utils"
+import { getErrorMessage } from "@/lib/error-messages"
 import { FadeIn } from "@/components/ui/animated"
 
 // ── Country codes ──
@@ -217,8 +221,7 @@ export function SignUpPage() {
       { firstName, lastName, email, phone, countryCode: country.dial, password },
       {
         onError: (err: unknown) => {
-          const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-          setError(msg || "Something went wrong. Please try again.")
+          setError(getErrorMessage(err))
         },
       }
     )
@@ -244,7 +247,7 @@ export function SignUpPage() {
 
         <div className="flex flex-1 items-center justify-center px-4 pb-12">
           <FadeIn className="w-full max-w-md text-center">
-            <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-emerald-500/10">
+            <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-gain">
               <IconCheck className="size-8 text-emerald-500" />
             </div>
             <h1 className="mt-6 text-2xl font-bold tracking-tight">
@@ -291,7 +294,7 @@ export function SignUpPage() {
                 {/* Name */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
-                    <Label htmlFor="firstName" className="text-xs">
+                    <Label htmlFor="firstName" className="section-label">
                       First Name
                     </Label>
                     <Input
@@ -303,7 +306,7 @@ export function SignUpPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="lastName" className="text-xs">
+                    <Label htmlFor="lastName" className="section-label">
                       Last Name
                     </Label>
                     <Input
@@ -318,7 +321,7 @@ export function SignUpPage() {
 
                 {/* Email */}
                 <div className="space-y-2">
-                  <Label htmlFor="signupEmail" className="text-xs">
+                  <Label htmlFor="signupEmail" className="section-label">
                     Email Address
                   </Label>
                   <Input
@@ -333,7 +336,7 @@ export function SignUpPage() {
 
                 {/* Phone */}
                 <div className="space-y-2">
-                  <Label htmlFor="phone" className="text-xs">
+                  <Label htmlFor="phone" className="section-label">
                     Phone Number
                   </Label>
                   <div className="flex gap-2">
@@ -352,7 +355,7 @@ export function SignUpPage() {
 
                 {/* Password */}
                 <div className="space-y-2">
-                  <Label htmlFor="signupPassword" className="text-xs">
+                  <Label htmlFor="signupPassword" className="section-label">
                     Password
                   </Label>
                   <div className="relative">
@@ -387,7 +390,7 @@ export function SignUpPage() {
                           <div
                             key={i}
                             className={cn(
-                              "h-1 flex-1 rounded-full transition-colors",
+                              "h-1 flex-1 transition-colors",
                               i < strength
                                 ? strengthColors[strength - 1]
                                 : "bg-muted"
@@ -421,10 +424,10 @@ export function SignUpPage() {
                             >
                               <div
                                 className={cn(
-                                  "flex size-3.5 shrink-0 items-center justify-center rounded-full transition-colors",
+                                  "flex size-3.5 shrink-0 items-center justify-center transition-colors",
                                   met
                                     ? "bg-emerald-500 text-white"
-                                    : "border border-muted-foreground/30"
+                                    : "rounded border border-border"
                                 )}
                               >
                                 {met && <IconCheck className="size-2.5" />}
@@ -449,7 +452,7 @@ export function SignUpPage() {
 
                 {/* Confirm Password */}
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword" className="text-xs">
+                  <Label htmlFor="confirmPassword" className="section-label">
                     Confirm Password
                   </Label>
                   <div className="relative">
@@ -518,7 +521,22 @@ export function SignUpPage() {
             </CardContent>
           </Card>
 
-          <p className="mt-6 text-center text-xs text-muted-foreground">
+          <div className="mt-6 flex items-center justify-center gap-6">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <IconLock className="size-3" />
+              <span>256-bit SSL</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <IconShield className="size-3" />
+              <span>SEBI Registered</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <IconRosetteDiscountCheck className="size-3" />
+              <span>Bank-grade Security</span>
+            </div>
+          </div>
+
+          <p className="mt-4 text-center text-xs text-muted-foreground">
             Already have an account?{" "}
             <Link to="/signin" className="font-medium text-primary hover:underline">
               Sign in

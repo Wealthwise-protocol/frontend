@@ -2,6 +2,7 @@ import { useState, useMemo } from "react"
 import { Link, useSearchParams, useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { authService } from "@/services/auth"
+import { getErrorMessage } from "@/lib/error-messages"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -96,7 +97,7 @@ export function ResetPasswordPage() {
         </div>
         <div className="flex flex-1 items-center justify-center px-4 pb-12">
           <FadeIn className="w-full max-w-md text-center">
-            <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-emerald-500/10">
+            <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-gain">
               <IconCheck className="size-8 text-emerald-500" />
             </div>
             <h1 className="mt-6 text-2xl font-bold tracking-tight">
@@ -138,8 +139,7 @@ export function ResetPasswordPage() {
       setSuccess(true)
       toast.success("Password reset successfully!")
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      setError(msg || "Invalid or expired reset link. Please request a new one.")
+      setError(getErrorMessage(err, "Invalid or expired reset link. Please request a new one."))
     } finally {
       setLoading(false)
     }
@@ -170,7 +170,7 @@ export function ResetPasswordPage() {
             <CardContent className="p-6">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="newPassword" className="text-xs">
+                  <Label htmlFor="newPassword" className="section-label">
                     New Password
                   </Label>
                   <div className="relative">
@@ -203,7 +203,7 @@ export function ResetPasswordPage() {
                           <div
                             key={i}
                             className={cn(
-                              "h-1 flex-1 rounded-full transition-colors",
+                              "h-1 flex-1 transition-colors",
                               i < strength
                                 ? strengthColors[strength - 1]
                                 : "bg-muted"
@@ -236,10 +236,10 @@ export function ResetPasswordPage() {
                             >
                               <div
                                 className={cn(
-                                  "flex size-3.5 shrink-0 items-center justify-center rounded-full transition-colors",
+                                  "flex size-3.5 shrink-0 items-center justify-center transition-colors",
                                   met
                                     ? "bg-emerald-500 text-white"
-                                    : "border border-muted-foreground/30"
+                                    : "rounded border border-border"
                                 )}
                               >
                                 {met && <IconCheck className="size-2.5" />}
@@ -263,7 +263,7 @@ export function ResetPasswordPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmNewPassword" className="text-xs">
+                  <Label htmlFor="confirmNewPassword" className="section-label">
                     Confirm Password
                   </Label>
                   <div className="relative">

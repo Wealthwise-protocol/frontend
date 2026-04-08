@@ -9,6 +9,7 @@ import {
   IconLoader2,
 } from "@tabler/icons-react"
 import { toast } from "sonner"
+import { getErrorMessage } from "@/lib/error-messages"
 import { Button } from "@/components/ui/button"
 import {
   AlertDialog,
@@ -51,6 +52,8 @@ export function ChatPage() {
   const { data: messages = [], isLoading: isLoadingHistory } = useQuery({
     queryKey: ["chat-history"],
     queryFn: fetchChatHistory,
+    staleTime: Infinity,
+    gcTime: 10 * 60 * 1000,
   })
 
   const { mutate: send, isPending: isSending } = useMutation({
@@ -72,12 +75,8 @@ export function ChatPage() {
       ])
     },
     onError: (err: unknown, _vars, context) => {
-      // Rollback optimistic user message
       queryClient.setQueryData(["chat-history"], context?.previous)
-      const message =
-        (err as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message || "AI service unavailable, please try again"
-      toast.error(message)
+      toast.error(getErrorMessage(err, "AI service unavailable, please try again"))
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["chat-history"] })
@@ -134,8 +133,8 @@ export function ChatPage() {
       {/* Header */}
       <div className="flex items-center justify-between pb-3">
         <div className="flex items-center gap-2">
-          <div className="flex size-7 items-center justify-center rounded-md bg-primary/10">
-            <IconSparkles className="size-4 text-primary" />
+          <div className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
+            <IconSparkles className="size-4" />
           </div>
           <div>
             <h1 className="text-sm font-bold tracking-tight">
@@ -181,15 +180,15 @@ export function ChatPage() {
       </div>
 
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto rounded-lg border border-border bg-card p-3">
+      <div className="flex-1 overflow-y-auto rounded-xl border border-border bg-card card-shadow p-3">
         {isLoadingHistory ? (
           <div className="flex h-full items-center justify-center">
             <IconLoader2 className="size-5 animate-spin text-muted-foreground" />
           </div>
         ) : showWelcome ? (
           <div className="flex h-full flex-col items-center justify-center gap-6 px-4 text-center">
-            <div className="flex size-12 items-center justify-center rounded-full bg-primary/10">
-              <IconRobot className="size-6 text-primary" />
+            <div className="flex size-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+              <IconRobot className="size-6" />
             </div>
             <div>
               <h2 className="text-base font-bold">
@@ -206,7 +205,7 @@ export function ChatPage() {
                   key={prompt}
                   type="button"
                   onClick={() => handleSuggestion(prompt)}
-                  className="rounded-lg border border-border bg-muted/50 px-3 py-2.5 text-left text-xs text-foreground transition-colors hover:border-primary/40 hover:bg-muted"
+                  className="rounded-lg border border-border bg-background px-3 py-2.5 text-left text-xs text-foreground transition-colors hover:bg-muted card-hover"
                 >
                   {prompt}
                 </button>
@@ -224,16 +223,16 @@ export function ChatPage() {
                 )}
               >
                 {msg.role === "assistant" && (
-                  <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                    <IconRobot className="size-3.5 text-primary" />
+                  <div className="flex size-6 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
+                    <IconRobot className="size-3.5" />
                   </div>
                 )}
                 <div
                   className={cn(
-                    "max-w-[85%] rounded-lg px-3 py-2 text-xs sm:max-w-[75%]",
+                    "max-w-[85%] px-3 py-2 text-xs sm:max-w-[75%]",
                     msg.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-foreground",
+                      ? "bg-primary text-primary-foreground rounded-2xl rounded-br-sm"
+                      : "rounded-2xl rounded-bl-sm border border-border bg-muted text-foreground",
                   )}
                 >
                   {msg.role === "assistant" ? (
@@ -250,10 +249,10 @@ export function ChatPage() {
             {/* Typing indicator */}
             {isSending && (
               <div className="flex gap-2.5">
-                <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                  <IconRobot className="size-3.5 text-primary" />
+                <div className="flex size-6 shrink-0 items-center justify-center bg-primary text-primary-foreground">
+                  <IconRobot className="size-3.5" />
                 </div>
-                <div className="rounded-lg bg-muted px-3 py-2">
+                <div className="rounded-2xl rounded-bl-sm border border-border bg-muted px-3 py-2">
                   <div className="flex items-center gap-1">
                     <span className="inline-block size-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:0ms]" />
                     <span className="inline-block size-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:150ms]" />
@@ -270,7 +269,9 @@ export function ChatPage() {
 
       {/* Input bar */}
       <div className="flex items-end gap-2 pt-3">
+        <label htmlFor="chat-input" className="sr-only">Message</label>
         <textarea
+          id="chat-input"
           ref={textareaRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -279,7 +280,7 @@ export function ChatPage() {
           disabled={isSending}
           rows={1}
           className={cn(
-            "field-sizing-content max-h-32 min-h-8 flex-1 resize-none rounded-md border border-input bg-input/20 px-3 py-1.5 text-xs transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30",
+            "input-clean field-sizing-content max-h-32 min-h-8 flex-1 resize-none rounded-lg bg-background px-3 py-1.5 text-xs outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50",
           )}
         />
         <Button

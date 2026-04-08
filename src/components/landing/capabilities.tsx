@@ -44,7 +44,7 @@ export function Capabilities() {
         {capabilities.map((item) => (
           <div
             key={item.title}
-            className="rounded-lg border border-border/50 bg-card p-4 transition-colors hover:border-primary/20 dark:border-white/[0.08] dark:bg-white/[0.04] dark:hover:border-white/[0.15] sm:p-6"
+            className="card-shadow card-hover rounded-lg border border-border bg-card p-4 transition-colors sm:p-6"
           >
             <item.icon className="size-6 text-primary sm:size-8" />
             <h3 className="mt-3 text-xs font-semibold sm:mt-5 sm:text-sm">{item.title}</h3>

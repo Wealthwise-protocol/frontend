@@ -1,5 +1,6 @@
-import { motion, AnimatePresence, useMotionValue, useTransform, animate } from "motion/react"
-import { type ReactNode, useEffect, useState } from "react"
+import { motion, AnimatePresence } from "motion/react"
+import { type ReactNode } from "react"
+import ReactCountUp from "react-countup"
 
 // Fade-in with upward slide
 export function FadeIn({
@@ -98,13 +99,13 @@ export function Collapsible({
   )
 }
 
-// Count-up number animation
+// Count-up number animation using react-countup
 export function CountUp({
   value,
   prefix = "",
   suffix = "",
   className,
-  duration = 1.2,
+  duration = 1.5,
   formatFn,
 }: {
   value: number
@@ -114,31 +115,50 @@ export function CountUp({
   duration?: number
   formatFn?: (v: number) => string
 }) {
-  const [display, setDisplay] = useState("0")
-  const motionValue = useMotionValue(0)
-  const formatted = useTransform(motionValue, (v) => {
-    if (formatFn) return formatFn(v)
-    if (value >= 100) return Math.round(v).toLocaleString("en-IN")
-    return v.toFixed(1)
-  })
-
-  useEffect(() => {
-    const controls = animate(motionValue, value, {
-      duration,
-      ease: "easeOut",
-    })
-    const unsubscribe = formatted.on("change", (v) => setDisplay(v))
-    return () => {
-      controls.stop()
-      unsubscribe()
-    }
-  }, [value, duration, motionValue, formatted])
-
   return (
     <span className={className}>
       {prefix}
-      {display}
+      <ReactCountUp
+        end={value}
+        duration={duration}
+        useEasing
+        easingFn={(t, b, c, d) => {
+          // easeOutCubic
+          const x = t / d - 1
+          return c * (x * x * x + 1) + b
+        }}
+        separator=","
+        formattingFn={
+          formatFn ??
+          (value >= 100
+            ? (v) => Math.round(v).toLocaleString("en-IN")
+            : (v) => v.toFixed(1))
+        }
+      />
       {suffix}
     </span>
+  )
+}
+
+// Page transition wrapper
+export function PageTransition({
+  children,
+  className,
+  locationKey,
+}: {
+  children: ReactNode
+  className?: string
+  locationKey: string
+}) {
+  return (
+    <motion.div
+      key={locationKey}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
+      className={className}
+    >
+      {children}
+    </motion.div>
   )
 }

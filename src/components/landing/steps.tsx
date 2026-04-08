@@ -27,7 +27,7 @@ export function Steps() {
       <div className="grid gap-8 sm:grid-cols-2 sm:gap-10 lg:grid-cols-3">
         {steps.map((item) => (
           <div key={item.step} className="flex flex-col gap-4">
-            <div className="flex size-10 items-center justify-center rounded-lg border border-border bg-card sm:size-12">
+            <div className="flex size-10 items-center justify-center rounded-lg border border-border bg-card card-shadow sm:size-12">
               <item.icon className="size-4 text-muted-foreground sm:size-5" />
             </div>
             <div>
