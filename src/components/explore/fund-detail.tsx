@@ -80,12 +80,24 @@ export function FundDetail({
     mutationFn: createSip,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sips"] })
+      queryClient.invalidateQueries({ queryKey: ["portfolio"] })
+      queryClient.invalidateQueries({ queryKey: ["transactions"] })
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err, "Failed to create SIP. Please try again."))
     },
   })
 
   const lumpsumMutation = useMutation({
     mutationFn: ({ fundId, amount }: { fundId: string; amount: number }) =>
       investLumpsum(fundId, amount),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["portfolio"] })
+      queryClient.invalidateQueries({ queryKey: ["transactions"] })
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err, "Failed to invest. Please try again."))
+    },
   })
 
   const handleClose = () => {

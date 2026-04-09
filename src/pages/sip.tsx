@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react"
 import { Link } from "react-router-dom"
+import { usePageTitle } from "@/hooks/use-page-title"
 import { toast } from "sonner"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { fetchSips, updateSip, deleteSip } from "@/services/funds"
@@ -335,6 +336,7 @@ function SIPRow({
 }
 
 export function SipPage() {
+  usePageTitle("SIP Management")
   const queryClient = useQueryClient()
   const { data: rawSips = [], isLoading, isError } = useQuery({
     queryKey: ["sips"],

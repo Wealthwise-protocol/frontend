@@ -1,16 +1,14 @@
 import axios from "axios"
 import Cookies from "js-cookie"
 import { TOKEN_COOKIE } from "@/stores/auth-store"
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ||
-  "https://wealthwise-backend-7zqx.onrender.com"
+import { env } from "@/lib/env"
 
 export const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: env.API_BASE_URL,
   timeout: 60000,
   headers: {
     "Content-Type": "application/json",
+    "X-Requested-With": "XMLHttpRequest",
   },
 })
 

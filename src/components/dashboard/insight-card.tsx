@@ -1,6 +1,8 @@
+import { useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "react-router-dom"
 import { IconSparkles } from "@tabler/icons-react"
+import { toast } from "sonner"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -12,6 +14,10 @@ export function InsightCard() {
     queryFn: fetchAiInsight,
     staleTime: 1000 * 60 * 30,
   })
+
+  useEffect(() => {
+    if (isError) toast.info("Couldn't load AI insight right now")
+  }, [isError])
 
   const fallback = isError || (!isLoading && !insight)
 

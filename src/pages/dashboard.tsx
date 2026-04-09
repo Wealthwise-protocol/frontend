@@ -1,3 +1,4 @@
+import { usePageTitle } from "@/hooks/use-page-title"
 import { StatCards } from "@/components/dashboard/stat-cards"
 import { InsightCard } from "@/components/dashboard/insight-card"
 import { PortfolioChart } from "@/components/dashboard/portfolio-chart"
@@ -6,6 +7,8 @@ import { HoldingsTable } from "@/components/dashboard/holdings-table"
 import { FadeIn } from "@/components/ui/animated"
 
 export function DashboardPage() {
+  usePageTitle("Dashboard")
+
   return (
     <>
       <FadeIn>

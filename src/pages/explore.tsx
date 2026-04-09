@@ -13,6 +13,7 @@ import {
   keepPreviousData,
 } from "@tanstack/react-query"
 import { type Fund } from "@/data/funds"
+import { usePageTitle } from "@/hooks/use-page-title"
 import {
   fetchFunds,
   fetchBookmarks,
@@ -71,6 +72,7 @@ type LayoutContext = {
 }
 
 export function ExplorePage() {
+  usePageTitle("Explore Funds")
   const [activeCategory, setActiveCategory] = useState("All Funds")
   const [selectedFund, setSelectedFund] = useState<Fund | null>(null)
   const [page, setPage] = useState(0)

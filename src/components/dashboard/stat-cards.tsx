@@ -99,6 +99,7 @@ export function StatCards() {
               </p>
               <p
                 className={`mt-2 text-2xl font-bold num tracking-tight ${stat.valueClass ?? ""}`}
+                aria-live="polite"
               >
                 <CountUp
                   value={stat.numValue}

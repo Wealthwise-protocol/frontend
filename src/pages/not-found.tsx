@@ -1,10 +1,12 @@
 import { Link, useNavigate } from "react-router-dom"
+import { usePageTitle } from "@/hooks/use-page-title"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { IconArrowLeft } from "@tabler/icons-react"
 import { FadeIn } from "@/components/ui/animated"
 
 export function NotFoundPage() {
+  usePageTitle("Page Not Found")
   const navigate = useNavigate()
 
   return (

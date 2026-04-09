@@ -5,10 +5,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { Toaster } from "@/components/ui/sonner"
 
+import { initSentry } from "@/lib/sentry"
 import "./index.css"
 import App from "./App.tsx"
 import { ThemeProvider } from "@/components/theme-provider.tsx"
 import { ErrorBoundary } from "@/components/error-boundary.tsx"
+
+initSentry()
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -16,6 +19,13 @@ const queryClient = new QueryClient({
       staleTime: 1000 * 60 * 5, // 5 minutes
       retry: 1,
       refetchOnWindowFocus: false,
+    },
+    mutations: {
+      onError: (err) => {
+        if (import.meta.env.DEV) {
+          console.error("Mutation failed:", err)
+        }
+      },
     },
   },
 })
