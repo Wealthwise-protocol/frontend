@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router-dom"
 import { AuthGuard } from "@/components/auth-guard"
 import { DashboardLayout } from "@/components/dashboard/layout"
 import { PageLoader } from "@/components/page-loader"
+import { useFocusOnNavigate } from "@/hooks/use-focus-on-navigate"
 
 const LandingPage = lazy(() =>
   import("@/pages/landing").then((m) => ({ default: m.LandingPage }))
@@ -48,6 +49,8 @@ const ChatPage = lazy(() =>
 )
 
 export function App() {
+  useFocusOnNavigate()
+
   return (
     <Suspense fallback={<PageLoader />}>
       <Routes>

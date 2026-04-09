@@ -5,6 +5,7 @@ import { authService, type SignInPayload, type SignUpPayload } from "@/services/
 import { useQueryClient } from "@tanstack/react-query"
 import { useAuthStore } from "@/stores/auth-store"
 import { getErrorMessage } from "@/lib/error-messages"
+import { Sentry } from "@/lib/sentry"
 
 export function useSignIn() {
   const navigate = useNavigate()
@@ -14,6 +15,7 @@ export function useSignIn() {
     mutationFn: (data: SignInPayload) => authService.signIn(data),
     onSuccess: (res) => {
       setAuth(res.user, res.token)
+      Sentry.setUser({ id: res.user.id, email: res.user.email })
       localStorage.setItem("ww-last-login", new Date().toISOString())
       toast.success("Welcome back!")
       navigate("/dashboard")
@@ -48,6 +50,7 @@ export function useSignOut() {
     mutationFn: () => authService.signOut(),
     onSettled: () => {
       signOut()
+      Sentry.setUser(null)
       queryClient.clear()
       navigate("/signin")
       toast.success("Signed out")

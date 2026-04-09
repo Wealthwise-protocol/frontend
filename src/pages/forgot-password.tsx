@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react"
+import { usePageTitle } from "@/hooks/use-page-title"
 import { Link, useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { authService } from "@/services/auth"
@@ -47,6 +48,7 @@ const requirements = [
 type Step = "email" | "otp" | "success"
 
 export function ForgotPasswordPage() {
+  usePageTitle("Forgot Password")
   const navigate = useNavigate()
 
   const [step, setStep] = useState<Step>("email")

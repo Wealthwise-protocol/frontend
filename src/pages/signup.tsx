@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useSignUp } from "@/hooks/use-auth"
+import { usePageTitle } from "@/hooks/use-page-title"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -155,6 +156,7 @@ function CountryCodePicker({
 
 // ── Sign Up Page ──
 export function SignUpPage() {
+  usePageTitle("Create Account")
   const navigate = useNavigate()
   const signUpMutation = useSignUp()
   const [firstName, setFirstName] = useState("")
@@ -511,7 +513,7 @@ export function SignUpPage() {
                 </div>
 
                 {error && (
-                  <p className="text-xs text-destructive">{error}</p>
+                  <p className="text-xs text-destructive" role="alert">{error}</p>
                 )}
 
                 <Button type="submit" className="w-full" disabled={signUpMutation.isPending}>

@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
+import { usePageTitle } from "@/hooks/use-page-title"
 import { fetchTransactions } from "@/services/funds"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -43,6 +44,7 @@ function formatDate(dateStr: string) {
 }
 
 export function TransactionsPage() {
+  usePageTitle("Transactions")
   const { data: transactions = [], isLoading, isError } = useQuery({
     queryKey: ["transactions"],
     queryFn: fetchTransactions,

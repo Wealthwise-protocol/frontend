@@ -22,7 +22,7 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
 
       setAuth: (user, token) => {
-        Cookies.set(TOKEN_COOKIE, token, { expires: 7, sameSite: "lax" })
+        Cookies.set(TOKEN_COOKIE, token, { expires: 7, sameSite: "strict" })
         set({ user, token, isAuthenticated: true })
       },
 
@@ -41,7 +41,6 @@ export const useAuthStore = create<AuthState>()(
       name: "ww-auth",
       partialize: (state) => ({
         user: state.user,
-        token: state.token,
         isAuthenticated: state.isAuthenticated,
       }),
     }

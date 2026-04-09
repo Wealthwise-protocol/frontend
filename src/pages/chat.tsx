@@ -1,4 +1,5 @@
 import { useRef, useEffect, useCallback, useState } from "react"
+import { usePageTitle } from "@/hooks/use-page-title"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import Markdown from "react-markdown"
 import {
@@ -44,6 +45,7 @@ const SUGGESTED_PROMPTS = [
 ]
 
 export function ChatPage() {
+  usePageTitle("Chat with X")
   const queryClient = useQueryClient()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)

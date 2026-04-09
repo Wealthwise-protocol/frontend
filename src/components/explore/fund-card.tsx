@@ -1,3 +1,4 @@
+import { memo } from "react"
 import type { Fund } from "@/data/funds"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -12,7 +13,7 @@ const riskClasses: Record<string, string> = {
   "VERY HIGH": "risk-very-high",
 }
 
-export function FundCard({
+export const FundCard = memo(function FundCard({
   fund,
   onSelect,
   saved = false,
@@ -27,6 +28,15 @@ export function FundCard({
     <Card
       className="cursor-pointer card-hover"
       onClick={() => onSelect(fund)}
+      tabIndex={0}
+      role="button"
+      aria-label={`View details for ${fund.name}`}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault()
+          onSelect(fund)
+        }
+      }}
     >
       <CardContent className="p-3.5 sm:p-5">
         <div className="flex items-start justify-between gap-2">
@@ -59,7 +69,10 @@ export function FundCard({
           <Badge variant="secondary" className="text-[0.55rem] sm:text-[0.6rem]">
             {fund.category} - {fund.subcategory}
           </Badge>
-          <span className={cn("text-[0.55rem] sm:text-[0.6rem]", riskClasses[fund.risk])}>
+          <span
+            className={cn("text-[0.55rem] sm:text-[0.6rem]", riskClasses[fund.risk])}
+            aria-label={`${fund.risk} risk level`}
+          >
             {fund.risk} RISK
           </span>
         </div>
@@ -112,4 +125,4 @@ export function FundCard({
       </CardContent>
     </Card>
   )
-}
+})

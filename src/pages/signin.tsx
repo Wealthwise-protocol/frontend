@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
 import { useSignIn } from "@/hooks/use-auth"
+import { usePageTitle } from "@/hooks/use-page-title"
 import { getErrorMessage } from "@/lib/error-messages"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -18,6 +19,7 @@ import {
 import { FadeIn } from "@/components/ui/animated"
 
 export function SignInPage() {
+  usePageTitle("Sign In")
   const signInMutation = useSignIn()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -96,9 +98,11 @@ export function SignInPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     onBlur={() => setTouched((t) => ({ ...t, email: true }))}
                     autoComplete="email"
+                    aria-invalid={!!emailError}
+                    aria-describedby={emailError ? "email-error" : undefined}
                   />
                   {emailError && (
-                    <p className="text-xs text-destructive">{emailError}</p>
+                    <p id="email-error" className="text-xs text-destructive">{emailError}</p>
                   )}
                 </div>
 
@@ -124,6 +128,8 @@ export function SignInPage() {
                       onBlur={() => setTouched((t) => ({ ...t, password: true }))}
                       autoComplete="current-password"
                       className="pr-10"
+                      aria-invalid={!!passwordError}
+                      aria-describedby={passwordError ? "password-error" : undefined}
                     />
                     <button
                       type="button"
@@ -139,7 +145,7 @@ export function SignInPage() {
                     </button>
                   </div>
                   {passwordError && (
-                    <p className="text-xs text-destructive">{passwordError}</p>
+                    <p id="password-error" className="text-xs text-destructive">{passwordError}</p>
                   )}
                 </div>
 
@@ -155,7 +161,7 @@ export function SignInPage() {
                 </div>
 
                 {error && (
-                  <p className="text-xs text-destructive">{error}</p>
+                  <p className="text-xs text-destructive" role="alert">{error}</p>
                 )}
 
                 <Button type="submit" className="w-full" disabled={signInMutation.isPending}>

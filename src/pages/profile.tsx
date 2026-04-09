@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { usePageTitle } from "@/hooks/use-page-title"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -41,6 +42,7 @@ const strengthColors = [
 ]
 
 export function ProfilePage() {
+  usePageTitle("Profile")
   const navigate = useNavigate()
   const { user, updateProfile, signOut } = useAuthStore()
 
